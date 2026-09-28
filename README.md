@@ -70,13 +70,19 @@ cd apps/api
 npm install
 ```
 
-### 2. Start the API
+### 2. Configure PostgreSQL
+
+Create a PostgreSQL database, then copy `apps/api/.env.example` to `apps/api/.env` and update `DATABASE_URL` with your credentials. The `.env` file is ignored by Git.
+
+### 3. Start the API
 
 ```bash
 npm run dev
 ```
 
-### 3. Open the frontend
+The server runs pending migrations before listening on port 3000. To run migrations without starting the server, use `npm run migrate`.
+
+### 4. Open the frontend
 
 ```bash
 cd apps/web
