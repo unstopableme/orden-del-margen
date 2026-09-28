@@ -6,7 +6,7 @@ A property acquisition, management, and social community platform designed to he
 
 `Orden del Magén` brings together two core pillars:
 
-- Property care and management
+- Property acquisition, care and management
 - Community connection and engagement
 
 The platform helps people manage residential spaces, coordinate maintenance, and create a healthy, connected community around each property.
@@ -26,6 +26,7 @@ The platform helps people manage residential spaces, coordinate maintenance, and
    - tenant and owner records
    - documents and property history
    - maintenance requests
+   - acuisitions
 
 2. Community engagement
    - community members
