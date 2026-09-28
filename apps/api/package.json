@@ -1,0 +1,13 @@
+{
+  "name": "orden-del-magen-api",
+  "version": "1.0.0",
+  "description": "Starter backend for Orden del Magén",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
