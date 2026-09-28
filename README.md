@@ -1,6 +1,6 @@
 # Orden del Magén
 
-A property management and social community platform designed to help owners, tenants, and community managers care for properties while building stronger neighborhoods.
+A property acquisition, management, and social community platform designed to help owners, tenants, and community managers care for properties while building stronger neighborhoods.
 
 ## Vision
 
