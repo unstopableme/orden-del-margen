@@ -1,4 +1,4 @@
-# Orden del Magén
+# Orden del Margén
 
 A property acquisition, management, and social community platform designed to help owners, tenants, and community managers care for properties while building stronger neighborhoods.
 
