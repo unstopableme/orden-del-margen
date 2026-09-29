@@ -73,6 +73,7 @@ router.get('/dashboard', (req, res) => {
 
   res.json({
     member: publicMember(member),
+    membershipPlans: data.membershipPlans,
     communities: memberCommunities,
     announcements: communityAnnouncements,
     properties: data.properties.filter((property) =>
@@ -91,6 +92,44 @@ router.get('/dashboard', (req, res) => {
         points: item.knowledgeScore || 0
       }))
       .sort((a, b) => b.points - a.points)
+  });
+});
+
+router.get('/membership/plans', (req, res) => {
+  res.json({
+    data: data.membershipPlans,
+    notice:
+      'Paid plans are interest-only in this educational MVP. No checkout, payment, or stored value is available.'
+  });
+});
+
+router.post('/membership/plans/:planId/interest', (req, res) => {
+  const member = findMember(req.body.memberId);
+  const plan = data.membershipPlans.find((item) => item.id === req.params.planId);
+
+  if (!member || !plan) {
+    return res.status(404).json({ message: 'Member or plan not found' });
+  }
+  if (plan.id === 'free') {
+    return res.status(400).json({ message: 'The free plan does not need a paid-plan interest request' });
+  }
+  if (data.membershipInterest.some(
+    (interest) => interest.memberId === member.id && interest.planId === plan.id
+  )) {
+    return res.status(409).json({ message: 'Interest already recorded for this plan' });
+  }
+
+  const interest = {
+    id: `membership-interest-${data.membershipInterest.length + 1}`,
+    memberId: member.id,
+    planId: plan.id,
+    status: 'interest_recorded',
+    createdAt: new Date().toISOString()
+  };
+  data.membershipInterest.push(interest);
+  res.status(201).json({
+    interest,
+    message: 'Interest recorded. Paid enrollment will require a future, reviewed checkout flow.'
   });
 });
 

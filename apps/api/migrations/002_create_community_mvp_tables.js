@@ -10,6 +10,7 @@ module.exports = {
         handle VARCHAR(80) NOT NULL UNIQUE,
         date_of_birth DATE,
         age_verified BOOLEAN NOT NULL DEFAULT FALSE,
+        membership_plan_id VARCHAR(40) NOT NULL DEFAULT 'free',
         bio VARCHAR(280),
         status VARCHAR(120) DEFAULT 'Available to connect',
         role VARCHAR(30) DEFAULT 'member',
@@ -103,17 +104,29 @@ module.exports = {
       )
     `);
     await db.query(`
+      CREATE TABLE IF NOT EXISTS membership_plan_interest (
+        id SERIAL PRIMARY KEY,
+        member_id INTEGER NOT NULL REFERENCES community_members(id) ON DELETE CASCADE,
+        plan_id VARCHAR(40) NOT NULL,
+        status VARCHAR(30) NOT NULL DEFAULT 'interest_recorded',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (member_id, plan_id)
+      )
+    `);
+    await db.query(`
       CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
       CREATE INDEX IF NOT EXISTS idx_progression_member ON progression_events(member_id);
       CREATE INDEX IF NOT EXISTS idx_announcements_community ON community_announcements(community_id, created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_quests_community_status ON community_quests(community_id, status);
       CREATE INDEX IF NOT EXISTS idx_coffee_gifts_recipient ON coffee_gifts(recipient_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_membership_interest_plan ON membership_plan_interest(plan_id);
     `);
   },
 
   down: async (db) => {
     await db.query('DROP TABLE IF EXISTS community_announcements CASCADE');
     await db.query('DROP TABLE IF EXISTS knowledge_challenges CASCADE');
+    await db.query('DROP TABLE IF EXISTS membership_plan_interest CASCADE');
     await db.query('DROP TABLE IF EXISTS coffee_gifts CASCADE');
     await db.query('DROP TABLE IF EXISTS community_quests CASCADE');
     await db.query('DROP TABLE IF EXISTS progression_events CASCADE');

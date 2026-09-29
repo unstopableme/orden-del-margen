@@ -6,6 +6,7 @@ Orden del Margen is a community-first platform for members to connect, contribut
 
 - Member profiles and user-controlled presence/status
 - 18+ membership requirement with age verification boundary
+- Free Traveler plan plus paid plan previews for future educational tiers
 - Member-owned profile topics: coffee, planet care, and protecting all creatures
 - Community memberships and moderated announcements
 - Referral invitations with internal points
@@ -56,6 +57,8 @@ Open http://localhost:8000. The page loads the demo member dashboard from the AP
 | `PATCH /api/community/members/:id/status` | Update a member's status |
 | `PATCH /api/community/members/:id/profile` | Update the member-owned profile |
 | `POST /api/community/membership/verify-age` | Verify the 18+ membership requirement |
+| `GET /api/community/membership/plans` | List free and paid-plan previews |
+| `POST /api/community/membership/plans/:planId/interest` | Record interest in a future paid plan without charging |
 | `POST /api/community/referrals` | Create a referral invitation |
 | `GET /api/community/quests` | List community help quests |
 | `POST /api/community/quests/:id/resolve` | Resolve a quest and award points |
@@ -84,6 +87,10 @@ The PostgreSQL community schema is in `apps/api/migrations/002_create_community_
 The narrative token concept is documented separately in
 `docs/whitepaper-cafe-de-la-doncella.md`. It is not an implemented sale or
 financial product.
+
+Paid membership plans are currently catalog previews and interest lists only.
+There is no checkout, payment processing, stored value, NFT, or token utility
+attached to a plan.
 
 ## Follow-up work
 

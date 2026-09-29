@@ -15,6 +15,7 @@
 - referrals and progression events
 - member-owned topics
 - 18+ membership eligibility boundary
+- free plan and paid-plan interest catalog
 - community quests
 - knowledge-based PvP scores
 - non-monetary coffee appreciation gifts
@@ -22,6 +23,7 @@
 ### Property context
 
 - safe property summaries
+- membership plan discovery without checkout
 - area and community association
 - operational notes
 

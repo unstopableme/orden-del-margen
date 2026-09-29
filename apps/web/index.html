@@ -42,6 +42,7 @@
           quests,
           coffeeGifts,
           knowledgeLeaderboard
+          ,membershipPlans
         } =
           dashboard;
         const joinedReferrals = referrals.filter(
@@ -127,6 +128,18 @@
             ${coffeeGifts.map((gift) => `<div class="activity-row"><span>${escapeHtml(gift.message)}</span><strong>☕</strong></div>`).join('')}
           </section>
 
+          <section class="card plans">
+            <div class="section-heading"><div><p class="eyebrow">Choose your path</p><h2>Membership plans</h2></div><span class="count">18+ only</span></div>
+            <p class="muted">Paid plans are future educational/community tiers. Checkout and payment processing are not enabled in this preview.</p>
+            <div class="plan-grid">${membershipPlans.map((plan) => `
+              <div class="plan ${plan.id === member.membershipPlanId ? 'plan-current' : ''}">
+                <div class="plan-top"><h3>${escapeHtml(plan.name)}</h3><strong>${plan.price === 0 ? 'Free' : `$${plan.price}/${plan.interval}`}</strong></div>
+                <p>${escapeHtml(plan.description)}</p>
+                <ul>${plan.features.map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}</ul>
+                ${plan.id === member.membershipPlanId ? '<span class="resolved">Current plan</span>' : plan.availability === 'interest_only' ? `<button class="secondary plan-interest" data-plan-id="${escapeHtml(plan.id)}">Join interest list</button>` : '<span class="resolved">Available</span>'}
+              </div>`).join('')}</div>
+          </section>
+
           <section class="card activity">
             <div class="section-heading"><div><p class="eyebrow">Your contribution trail</p><h2>Recent activity</h2></div></div>
             ${progressionEvents.map((event) => `<div class="activity-row"><span>${escapeHtml(event.label)}</span><strong>+${event.points} pts</strong></div>`).join('')}
@@ -179,6 +192,18 @@
             })
           });
           window.location.reload();
+        });
+
+        document.querySelectorAll('.plan-interest').forEach((button) => {
+          button.addEventListener('click', async () => {
+            const response = await fetch(`http://localhost:3000/api/community/membership/plans/${button.dataset.planId}/interest`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ memberId: 'member-1' })
+            });
+            const result = await response.json();
+            window.alert(result.message);
+          });
         });
       }
 

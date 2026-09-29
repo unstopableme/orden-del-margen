@@ -52,6 +52,13 @@ button { border: 0; border-radius: 10px; cursor: pointer; font: inherit; font-we
 .quest { display: flex; justify-content: space-between; gap: 20px; padding: 16px 0; border-top: 1px solid #eeeae1; }
 .quest p { margin-bottom: 8px; color: #586760; line-height: 1.45; }
 .resolved { align-self: center; color: #17766c; font-size: 0.8rem; font-weight: 700; }
+.plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.plan { padding: 18px; border: 1px solid #e7e3da; border-radius: 14px; background: #fff; }
+.plan-current { border-color: #86b9a3; box-shadow: inset 0 0 0 1px #86b9a3; }
+.plan-top { display: flex; justify-content: space-between; gap: 10px; }
+.plan-top strong { color: #17766c; white-space: nowrap; }
+.plan p { min-height: 58px; color: #586760; line-height: 1.4; }
+.plan ul { min-height: 78px; padding-left: 18px; color: #71807a; font-size: 0.85rem; line-height: 1.7; }
 .activity-row { justify-content: space-between; padding: 14px 0; border-top: 1px solid #eeeae1; color: #586760; }
 .activity-row strong { color: #17766c; }
 .loading, .error { padding: 70px 0; text-align: center; color: #71807a; }
@@ -64,4 +71,5 @@ button { border: 0; border-radius: 10px; cursor: pointer; font: inherit; font-we
   .level-card { margin-top: 24px; }
   .metrics { grid-template-columns: 1fr; }
   .content-grid > .card + .card { margin-top: 18px; }
+  .plan-grid { grid-template-columns: 1fr; }
 }

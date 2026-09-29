@@ -18,6 +18,7 @@ The first release validates whether members return to connect and contribute. It
 - [x] Referral invitations
 - [x] Member-owned profile topics
 - [x] 18+ membership requirement boundary
+- [x] Free membership plan and paid-plan previews
 - [x] Points and badge progression
 - [x] Community quests that award points when resolved
 - [x] Knowledge-based PvP scoring
@@ -47,5 +48,6 @@ The first release validates whether members return to connect and contribute. It
 - Legally consequential ownership/title records
 - NFT/blockchain requirements
 - Token sales, custody, transfers, airdrops, and redemptions
+- Paid checkout and recurring billing (requires separate legal/payment review)
 
 These topics require separate product, legal, and security decisions and must not be represented by points, badges, referrals, or informational property cards.

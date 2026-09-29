@@ -17,6 +17,11 @@ The current product expresses the legend through member-owned profiles,
 community topics, knowledge games, planet-care and creature-protection
 quests, and non-monetary appreciation gifts.
 
+The app may show free and paid membership plan concepts for educational
+product discovery. Paid plans are not currently purchasable; any displayed
+price is a preview label only, with no checkout, payment, stored value, or
+token attached.
+
 ## 2. Narrative token concept
 
 The story describes a fictional Doncella Token, **DULCÍNEA**, as a scarce
@@ -51,4 +56,3 @@ Future chapters may use the Café, Don Quixote, Sancho, and the Doncella as
 fictional framing for quests, events, art, and educational content. Narrative
 language must remain clearly separate from legal promises, financial returns,
 ownership claims, or an invitation to invest.
-

@@ -20,6 +20,7 @@ const members = [
     id: 'member-1',
     dateOfBirth: '1990-04-12',
     ageVerified: true,
+    membershipPlanId: 'free',
     displayName: 'María Sol',
     handle: '@mariasol',
     bio: 'Community gardener and welcome guide.',
@@ -36,6 +37,7 @@ const members = [
     id: 'member-2',
     dateOfBirth: '1987-11-03',
     ageVerified: true,
+    membershipPlanId: 'free',
     displayName: 'Diego Norte',
     handle: '@diegonorte',
     bio: 'Organizes local events and resource swaps.',
@@ -49,6 +51,38 @@ const members = [
     communityIds: ['casa-azul', 'viviendas-del-sol']
   }
 ];
+
+const membershipPlans = [
+  {
+    id: 'free',
+    name: 'Traveler',
+    price: 0,
+    interval: 'forever',
+    description: 'Explore the community, join knowledge games, and follow public quests.',
+    features: ['Member profile and status', 'Community announcements', 'Knowledge games and quests'],
+    availability: 'available'
+  },
+  {
+    id: 'paid-community',
+    name: 'Café Circle',
+    price: 9,
+    interval: 'month',
+    description: 'A future paid community tier for deeper educational and social programming.',
+    features: ['Everything in Traveler', 'Small-group learning circles', 'Member-only story sessions'],
+    availability: 'interest_only'
+  },
+  {
+    id: 'paid-steward',
+    name: 'Steward Circle',
+    price: 25,
+    interval: 'month',
+    description: 'A future supporter tier for expanded workshops and community project participation.',
+    features: ['Everything in Café Circle', 'Steward workshops', 'Community project briefings'],
+    availability: 'interest_only'
+  }
+];
+
+const membershipInterest = [];
 
 const referrals = [
   {
@@ -196,6 +230,8 @@ module.exports = {
   coffeeGifts,
   communities,
   knowledgeChallenges,
+  membershipInterest,
+  membershipPlans,
   members,
   properties,
   progressionEvents,
