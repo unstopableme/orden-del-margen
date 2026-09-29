@@ -3,35 +3,137 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Orden del Magén</title>
+    <title>Orden del Margen | Community</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="container">
-      <header>
-        <h1>Orden del Magén</h1>
-        <p>Property care + social community</p>
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" href="/">
+          <span class="brand-mark">OM</span>
+          <span>Orden del Margen</span>
+        </a>
+        <span class="environment">Community preview</span>
       </header>
 
-      <main>
-        <section class="card">
-          <h2>Property management</h2>
-          <ul>
-            <li>Track properties</li>
-            <li>Manage owners and tenants</li>
-            <li>Log maintenance requests</li>
-          </ul>
-        </section>
-
-        <section class="card">
-          <h2>Community building</h2>
-          <ul>
-            <li>Announcements</li>
-            <li>Events</li>
-            <li>Resident communication</li>
-          </ul>
-        </section>
+      <main id="app" aria-live="polite">
+        <div class="loading">Loading your community dashboard...</div>
       </main>
     </div>
+    <script>
+      const apiUrl = 'http://localhost:3000/api/community/dashboard?memberId=member-1';
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#039;');
+      }
+
+      function renderDashboard(dashboard) {
+        const { member, announcements, properties, referrals, progressionEvents } =
+          dashboard;
+        const joinedReferrals = referrals.filter(
+          (referral) => referral.status === 'joined'
+        ).length;
+
+        document.querySelector('#app').innerHTML = `
+          <section class="hero">
+            <div>
+              <p class="eyebrow">Your neighborhood network</p>
+              <h1>Good to see you, ${escapeHtml(member.displayName)}.</h1>
+              <p class="muted">${escapeHtml(member.bio)}</p>
+            </div>
+            <div class="level-card">
+              <span>Level ${member.level}</span>
+              <strong>${member.points} pts</strong>
+              <div class="progress"><span style="width: ${member.progressToNextLevel}%"></span></div>
+              <small>${member.nextLevelAt - member.points} points to the next level</small>
+            </div>
+          </section>
+
+          <section class="grid metrics">
+            <article class="card status-card">
+              <div class="card-heading"><span class="icon">✦</span><span>Member status</span></div>
+              <p class="status">${escapeHtml(member.status)}</p>
+              <button class="secondary" id="change-status">Update status</button>
+            </article>
+            <article class="card">
+              <div class="card-heading"><span class="icon">↗</span><span>Referrals</span></div>
+              <strong class="metric">${joinedReferrals}/${referrals.length}</strong>
+              <p class="muted">Neighbors have joined from your invites.</p>
+              <button class="secondary" id="invite-neighbor">Invite a neighbor</button>
+            </article>
+            <article class="card">
+              <div class="card-heading"><span class="icon">◆</span><span>Badges</span></div>
+              <div class="badges">${member.badges.map((badge) => `<span>${escapeHtml(badge)}</span>`).join('')}</div>
+              <p class="muted">Earn recognition through helpful community actions.</p>
+            </article>
+          </section>
+
+          <section class="content-grid">
+            <article class="card">
+              <div class="section-heading">
+                <div><p class="eyebrow">Stay connected</p><h2>Community updates</h2></div>
+                <span class="count">${announcements.length}</span>
+              </div>
+              <div class="updates">${announcements.map((item) => `
+                <div class="update">
+                  <div class="update-dot"></div>
+                  <div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p><small>By ${escapeHtml(item.author)}</small></div>
+                </div>`).join('')}</div>
+            </article>
+            <article class="card">
+              <div class="section-heading"><div><p class="eyebrow">Where we gather</p><h2>Community spaces</h2></div></div>
+              <div class="property-list">${properties.map((property) => `
+                <div class="property">
+                  <div class="property-image">${property.name.slice(0, 1)}</div>
+                  <div><h3>${escapeHtml(property.name)}</h3><p>${escapeHtml(property.area)} · ${escapeHtml(property.type)}</p><small>${escapeHtml(property.summary)}</small></div>
+                </div>`).join('')}</div>
+            </article>
+          </section>
+
+          <section class="card activity">
+            <div class="section-heading"><div><p class="eyebrow">Your contribution trail</p><h2>Recent activity</h2></div></div>
+            ${progressionEvents.map((event) => `<div class="activity-row"><span>${escapeHtml(event.label)}</span><strong>+${event.points} pts</strong></div>`).join('')}
+          </section>
+        `;
+
+        document.querySelector('#change-status').addEventListener('click', async () => {
+          const status = window.prompt('What are you up to?', member.status);
+          if (!status) return;
+          await fetch('http://localhost:3000/api/community/members/member-1/status', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+          });
+          window.location.reload();
+        });
+
+        document.querySelector('#invite-neighbor').addEventListener('click', async () => {
+          const inviteeName = window.prompt('Who would you like to invite?');
+          if (!inviteeName) return;
+          await fetch('http://localhost:3000/api/community/referrals', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ referrerId: 'member-1', inviteeName })
+          });
+          window.location.reload();
+        });
+      }
+
+      fetch(apiUrl)
+        .then((response) => {
+          if (!response.ok) throw new Error('Unable to load dashboard');
+          return response.json();
+        })
+        .then(renderDashboard)
+        .catch((error) => {
+          document.querySelector('#app').innerHTML =
+            `<div class="error">${escapeHtml(error.message)}. Start the API on port 3000 and refresh.</div>`;
+        });
+    </script>
   </body>
 </html>
