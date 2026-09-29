@@ -18,6 +18,8 @@ const communities = [
 const members = [
   {
     id: 'member-1',
+    dateOfBirth: '1990-04-12',
+    ageVerified: true,
     displayName: 'María Sol',
     handle: '@mariasol',
     bio: 'Community gardener and welcome guide.',
@@ -32,6 +34,8 @@ const members = [
   },
   {
     id: 'member-2',
+    dateOfBirth: '1987-11-03',
+    ageVerified: true,
     displayName: 'Diego Norte',
     handle: '@diegonorte',
     bio: 'Organizes local events and resource swaps.',

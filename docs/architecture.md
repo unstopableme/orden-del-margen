@@ -14,6 +14,7 @@
 - announcements
 - referrals and progression events
 - member-owned topics
+- 18+ membership eligibility boundary
 - community quests
 - knowledge-based PvP scores
 - non-monetary coffee appreciation gifts
@@ -53,6 +54,10 @@ community_announcements
 ```
 
 The migration is `apps/api/migrations/002_create_community_mvp_tables.js`. Existing acquisition tables remain a separate internal domain and are not expanded by the community MVP.
+
+The narrative token concept is intentionally isolated in
+`docs/whitepaper-cafe-de-la-doncella.md`; it is not part of the runtime
+architecture.
 
 ## API boundary
 

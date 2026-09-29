@@ -17,6 +17,7 @@ The first release validates whether members return to connect and contribute. It
 - [x] Moderated announcement feed
 - [x] Referral invitations
 - [x] Member-owned profile topics
+- [x] 18+ membership requirement boundary
 - [x] Points and badge progression
 - [x] Community quests that award points when resolved
 - [x] Knowledge-based PvP scoring
@@ -45,5 +46,6 @@ The first release validates whether members return to connect and contribute. It
 - Custody of funds, payments, rent collection, or financial accounts
 - Legally consequential ownership/title records
 - NFT/blockchain requirements
+- Token sales, custody, transfers, airdrops, and redemptions
 
 These topics require separate product, legal, and security decisions and must not be represented by points, badges, referrals, or informational property cards.

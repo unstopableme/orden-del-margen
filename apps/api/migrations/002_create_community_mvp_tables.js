@@ -8,6 +8,8 @@ module.exports = {
         id SERIAL PRIMARY KEY,
         display_name VARCHAR(120) NOT NULL,
         handle VARCHAR(80) NOT NULL UNIQUE,
+        date_of_birth DATE,
+        age_verified BOOLEAN NOT NULL DEFAULT FALSE,
         bio VARCHAR(280),
         status VARCHAR(120) DEFAULT 'Available to connect',
         role VARCHAR(30) DEFAULT 'member',

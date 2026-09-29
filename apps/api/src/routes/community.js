@@ -8,11 +8,29 @@ function findMember(memberId) {
 }
 
 function publicMember(member) {
+  const { dateOfBirth, ...safeMember } = member;
   return {
-    ...member,
+    ...safeMember,
+    membershipAgeRequirement: '18+',
     progressToNextLevel: member.points % 100,
     nextLevelAt: member.level * 100
   };
+}
+
+function isAdult(dateOfBirth) {
+  const birthDate = new Date(dateOfBirth);
+  if (Number.isNaN(birthDate.getTime()) || birthDate > new Date()) {
+    return false;
+  }
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const birthdayPassed =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate());
+  if (!birthdayPassed) age -= 1;
+  return age >= 18;
 }
 
 function addProgression(member, eventType, label, points) {
@@ -136,6 +154,29 @@ router.patch('/members/:id/profile', (req, res) => {
   member.bio = bio;
   member.topics = topics;
   res.json(publicMember(member));
+});
+
+router.post('/membership/verify-age', (req, res) => {
+  const member = findMember(req.body.memberId);
+  const dateOfBirth =
+    typeof req.body.dateOfBirth === 'string' ? req.body.dateOfBirth.trim() : '';
+
+  if (!member) {
+    return res.status(404).json({ message: 'Member not found' });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
+    return res.status(400).json({ message: 'Use date of birth format YYYY-MM-DD' });
+  }
+  if (!isAdult(dateOfBirth)) {
+    member.ageVerified = false;
+    return res.status(403).json({
+      message: 'Café de la Doncella membership is restricted to people age 18 or older'
+    });
+  }
+
+  member.dateOfBirth = dateOfBirth;
+  member.ageVerified = true;
+  res.json({ eligible: true, requirement: '18+', member: publicMember(member) });
 });
 
 router.post('/referrals', (req, res) => {
