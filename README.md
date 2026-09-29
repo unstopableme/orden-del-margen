@@ -5,16 +5,19 @@ Orden del Margen is a community-first platform for members to connect, contribut
 ## MVP
 
 - Member profiles and user-controlled presence/status
+- Member-owned profile topics: coffee, planet care, and protecting all creatures
 - Community memberships and moderated announcements
 - Referral invitations with internal points
-- Transparent non-monetary progression and badges
+- Community quests that award points when members help resolve them
+- Knowledge-based PvP challenges and a community leaderboard
+- Non-monetary coffee appreciation gifts
 - Read-only property/community summaries and operational notes
 
 The current implementation uses a Node.js/CommonJS + Express API, a static HTML/CSS/JavaScript frontend, and PostgreSQL-oriented migrations. Demo data is kept in memory so the dashboard can be evaluated without provisioning a database.
 
 ## MVP boundaries
 
-The MVP does not execute securities or share purchases, custody funds, process payments, record legal ownership/title, or require NFTs/blockchain. Points and badges are internal participation signals with no cash value or ownership rights.
+The MVP does not execute securities or share purchases, custody funds, process payments, or record legal ownership/title, and does not require NFTs/blockchain. Points, badges, knowledge scores, and coffee gifts are internal participation/appreciation signals with no cash value or ownership rights.
 
 ## Getting started
 
@@ -50,7 +53,13 @@ Open http://localhost:8000. The page loads the demo member dashboard from the AP
 | `GET /api/community/dashboard?memberId=member-1` | Dashboard aggregate for a member |
 | `GET /api/community/members/:id` | Public member profile |
 | `PATCH /api/community/members/:id/status` | Update a member's status |
+| `PATCH /api/community/members/:id/profile` | Update the member-owned profile |
 | `POST /api/community/referrals` | Create a referral invitation |
+| `GET /api/community/quests` | List community help quests |
+| `POST /api/community/quests/:id/resolve` | Resolve a quest and award points |
+| `POST /api/community/coffee-gifts` | Send a non-monetary coffee appreciation gift |
+| `GET /api/community/games/knowledge/challenges` | List knowledge-based PvP challenges |
+| `POST /api/community/games/knowledge/answers` | Submit an answer and update PvP score |
 | `GET /api/community/communities/:id/announcements` | Community announcement feed |
 | `GET /api/community/properties` | Safe property summaries |
 

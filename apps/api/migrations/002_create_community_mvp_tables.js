@@ -67,14 +67,53 @@ module.exports = {
       )
     `);
     await db.query(`
+      CREATE TABLE IF NOT EXISTS community_quests (
+        id SERIAL PRIMARY KEY,
+        community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+        title VARCHAR(160) NOT NULL,
+        description TEXT NOT NULL,
+        topic VARCHAR(80) NOT NULL,
+        points INTEGER NOT NULL CHECK (points > 0),
+        status VARCHAR(20) NOT NULL DEFAULT 'open',
+        resolved_by INTEGER REFERENCES community_members(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        resolved_at TIMESTAMP
+      )
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS coffee_gifts (
+        id SERIAL PRIMARY KEY,
+        sender_id INTEGER NOT NULL REFERENCES community_members(id),
+        recipient_id INTEGER NOT NULL REFERENCES community_members(id),
+        message VARCHAR(240) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CHECK (sender_id <> recipient_id)
+      )
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS knowledge_challenges (
+        id SERIAL PRIMARY KEY,
+        topic VARCHAR(80) NOT NULL,
+        question TEXT NOT NULL,
+        options JSONB NOT NULL,
+        correct_option INTEGER NOT NULL,
+        points INTEGER NOT NULL CHECK (points > 0)
+      )
+    `);
+    await db.query(`
       CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
       CREATE INDEX IF NOT EXISTS idx_progression_member ON progression_events(member_id);
       CREATE INDEX IF NOT EXISTS idx_announcements_community ON community_announcements(community_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_quests_community_status ON community_quests(community_id, status);
+      CREATE INDEX IF NOT EXISTS idx_coffee_gifts_recipient ON coffee_gifts(recipient_id, created_at DESC);
     `);
   },
 
   down: async (db) => {
     await db.query('DROP TABLE IF EXISTS community_announcements CASCADE');
+    await db.query('DROP TABLE IF EXISTS knowledge_challenges CASCADE');
+    await db.query('DROP TABLE IF EXISTS coffee_gifts CASCADE');
+    await db.query('DROP TABLE IF EXISTS community_quests CASCADE');
     await db.query('DROP TABLE IF EXISTS progression_events CASCADE');
     await db.query('DROP TABLE IF EXISTS referrals CASCADE');
     await db.query('DROP TABLE IF EXISTS community_memberships CASCADE');

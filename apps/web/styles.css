@@ -19,6 +19,8 @@ h1 { max-width: 650px; margin-bottom: 12px; font-size: clamp(2.2rem, 5vw, 4.5rem
 h2 { margin-bottom: 0; font-size: 1.35rem; letter-spacing: -0.03em; }
 h3 { margin-bottom: 6px; font-size: 0.98rem; }
 .eyebrow { margin-bottom: 10px; color: #b26443; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; }
+.topics { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.topics span { padding: 7px 10px; border-radius: 99px; color: #17766c; background: #e4f0e8; font-size: 0.76rem; font-weight: 700; }
 .level-card { min-width: 220px; padding: 20px; border-radius: 18px; color: #f8f5eb; background: #173f3a; }
 .level-card span, .level-card small { display: block; color: #bdd8c9; }
 .level-card strong { display: block; margin: 4px 0 14px; font-size: 1.5rem; }
@@ -47,6 +49,9 @@ button { border: 0; border-radius: 10px; cursor: pointer; font: inherit; font-we
 .property-image { display: grid; place-items: center; flex: 0 0 auto; width: 48px; height: 48px; border-radius: 14px; color: #f8f5eb; background: #bd7753; font-size: 1.25rem; font-weight: 800; }
 .property p { margin-bottom: 8px; color: #71807a; font-size: 0.82rem; }
 .property small { display: block; line-height: 1.4; }
+.quest { display: flex; justify-content: space-between; gap: 20px; padding: 16px 0; border-top: 1px solid #eeeae1; }
+.quest p { margin-bottom: 8px; color: #586760; line-height: 1.45; }
+.resolved { align-self: center; color: #17766c; font-size: 0.8rem; font-weight: 700; }
 .activity-row { justify-content: space-between; padding: 14px 0; border-top: 1px solid #eeeae1; color: #586760; }
 .activity-row strong { color: #17766c; }
 .loading, .error { padding: 70px 0; text-align: center; color: #71807a; }

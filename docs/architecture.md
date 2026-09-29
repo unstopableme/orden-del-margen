@@ -13,6 +13,10 @@
 - communities and memberships
 - announcements
 - referrals and progression events
+- member-owned topics
+- community quests
+- knowledge-based PvP scores
+- non-monetary coffee appreciation gifts
 
 ### Property context
 
@@ -20,7 +24,7 @@
 - area and community association
 - operational notes
 
-The MVP must not expose securities, share purchases, funds custody, payments, legal title/ownership records, or NFT/blockchain dependencies.
+The MVP must not expose securities, share purchases, funds custody, payments, legal title/ownership records, or NFT/blockchain dependencies. Coffee gifts are appreciation records only, and PvP scores/points are not redeemable value.
 
 ### Administration
 

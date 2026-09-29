@@ -16,7 +16,11 @@ The first release validates whether members return to connect and contribute. It
 - [x] Community membership model
 - [x] Moderated announcement feed
 - [x] Referral invitations
+- [x] Member-owned profile topics
 - [x] Points and badge progression
+- [x] Community quests that award points when resolved
+- [x] Knowledge-based PvP scoring
+- [x] Non-monetary coffee appreciation gifts
 - [ ] Events and participation check-ins
 - [ ] Discussion threads and reporting
 

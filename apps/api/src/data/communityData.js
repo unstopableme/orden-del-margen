@@ -21,9 +21,11 @@ const members = [
     displayName: 'María Sol',
     handle: '@mariasol',
     bio: 'Community gardener and welcome guide.',
+    topics: ['coffee', 'planet care', 'creature protection'],
     status: 'Helping neighbors settle in',
     role: 'member',
     points: 280,
+    knowledgeScore: 120,
     level: 3,
     badges: ['Welcome guide', 'Garden keeper'],
     communityIds: ['casa-azul']
@@ -33,9 +35,11 @@ const members = [
     displayName: 'Diego Norte',
     handle: '@diegonorte',
     bio: 'Organizes local events and resource swaps.',
+    topics: ['coffee', 'planet care', 'knowledge games'],
     status: 'Planning the next resource swap',
     role: 'moderator',
     points: 460,
+    knowledgeScore: 180,
     level: 5,
     badges: ['Event host', 'Resource builder'],
     communityIds: ['casa-azul', 'viviendas-del-sol']
@@ -75,6 +79,58 @@ const progressionEvents = [
     label: 'Welcomed a new neighbor',
     points: 25,
     createdAt: '2026-09-26T13:15:00.000Z'
+  }
+];
+
+const quests = [
+  {
+    id: 'quest-1',
+    communityId: 'casa-azul',
+    title: 'Restore the pollinator corner',
+    description: 'Coordinate a native-plant care session and share one way to protect local creatures.',
+    topic: 'creature protection',
+    points: 120,
+    status: 'open',
+    resolvedBy: null
+  },
+  {
+    id: 'quest-2',
+    communityId: 'casa-azul',
+    title: 'Map a low-waste coffee morning',
+    description: 'Collect reusable-cup and composting tips from three neighbors.',
+    topic: 'coffee',
+    points: 80,
+    status: 'open',
+    resolvedBy: null
+  }
+];
+
+const coffeeGifts = [
+  {
+    id: 'coffee-gift-1',
+    senderId: 'member-2',
+    recipientId: 'member-1',
+    message: 'Thanks for welcoming our new neighbors.',
+    createdAt: '2026-09-28T10:15:00.000Z'
+  }
+];
+
+const knowledgeChallenges = [
+  {
+    id: 'knowledge-1',
+    topic: 'planet care',
+    question: 'Which action usually reduces household food waste most directly?',
+    options: ['Buying more packaging', 'Planning portions and using leftovers', 'Leaving food uncovered'],
+    correctOption: 1,
+    points: 50
+  },
+  {
+    id: 'knowledge-2',
+    topic: 'creature protection',
+    question: 'What helps pollinators in a shared garden?',
+    options: ['Native flowering plants', 'Removing all ground cover', 'Using bright lights overnight'],
+    correctOption: 0,
+    points: 50
   }
 ];
 
@@ -133,9 +189,12 @@ const properties = [
 
 module.exports = {
   announcements,
+  coffeeGifts,
   communities,
+  knowledgeChallenges,
   members,
   properties,
   progressionEvents,
+  quests,
   referrals
 };

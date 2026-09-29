@@ -33,7 +33,16 @@
       }
 
       function renderDashboard(dashboard) {
-        const { member, announcements, properties, referrals, progressionEvents } =
+        const {
+          member,
+          announcements,
+          properties,
+          referrals,
+          progressionEvents,
+          quests,
+          coffeeGifts,
+          knowledgeLeaderboard
+        } =
           dashboard;
         const joinedReferrals = referrals.filter(
           (referral) => referral.status === 'joined'
@@ -45,6 +54,7 @@
               <p class="eyebrow">Your neighborhood network</p>
               <h1>Good to see you, ${escapeHtml(member.displayName)}.</h1>
               <p class="muted">${escapeHtml(member.bio)}</p>
+              <div class="topics">${member.topics.map((topic) => `<span>${escapeHtml(topic)}</span>`).join('')}</div>
             </div>
             <div class="level-card">
               <span>Level ${member.level}</span>
@@ -95,6 +105,28 @@
             </article>
           </section>
 
+          <section class="content-grid">
+            <article class="card">
+              <div class="section-heading"><div><p class="eyebrow">Play to help</p><h2>Community quests</h2></div><span class="count">${quests.filter((quest) => quest.status === 'open').length} open</span></div>
+              <div class="quest-list">${quests.map((quest) => `
+                <div class="quest">
+                  <div><h3>${escapeHtml(quest.title)}</h3><p>${escapeHtml(quest.description)}</p><small>${escapeHtml(quest.topic)} · ${quest.points} points</small></div>
+                  ${quest.status === 'open' ? `<button class="secondary resolve-quest" data-quest-id="${escapeHtml(quest.id)}">Resolve</button>` : '<span class="resolved">Resolved</span>'}
+                </div>`).join('')}</div>
+            </article>
+            <article class="card">
+              <div class="section-heading"><div><p class="eyebrow">Knowledge PvP</p><h2>Community leaderboard</h2></div><span class="count">No cash value</span></div>
+              <p class="muted">Compete in knowledge challenges about coffee, planet care, and protecting creatures.</p>
+              <div class="leaderboard">${knowledgeLeaderboard.map((player, index) => `<div class="activity-row"><span>${index + 1}. ${escapeHtml(player.displayName)}</span><strong>${player.points} score</strong></div>`).join('')}</div>
+            </article>
+          </section>
+
+          <section class="card gifts">
+            <div class="section-heading"><div><p class="eyebrow">Small acts of thanks</p><h2>Coffee gifts</h2></div><button class="secondary" id="send-coffee">Send appreciation</button></div>
+            <p class="muted">Coffee gifts are community appreciation messages only. They do not process money or create ownership rights.</p>
+            ${coffeeGifts.map((gift) => `<div class="activity-row"><span>${escapeHtml(gift.message)}</span><strong>☕</strong></div>`).join('')}
+          </section>
+
           <section class="card activity">
             <div class="section-heading"><div><p class="eyebrow">Your contribution trail</p><h2>Recent activity</h2></div></div>
             ${progressionEvents.map((event) => `<div class="activity-row"><span>${escapeHtml(event.label)}</span><strong>+${event.points} pts</strong></div>`).join('')}
@@ -119,6 +151,32 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ referrerId: 'member-1', inviteeName })
+          });
+          window.location.reload();
+        });
+
+        document.querySelectorAll('.resolve-quest').forEach((button) => {
+          button.addEventListener('click', async () => {
+            await fetch(`http://localhost:3000/api/community/quests/${button.dataset.questId}/resolve`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ memberId: 'member-1' })
+            });
+            window.location.reload();
+          });
+        });
+
+        document.querySelector('#send-coffee').addEventListener('click', async () => {
+          const message = window.prompt('What would you like to thank a neighbor for?');
+          if (!message) return;
+          await fetch('http://localhost:3000/api/community/coffee-gifts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              senderId: 'member-1',
+              recipientId: 'member-2',
+              message
+            })
           });
           window.location.reload();
         });
