@@ -2,106 +2,66 @@
 
 ## System overview
 
-`Orden del Magén` is a platform that combines property operations with community engagement. It is designed to support owners, tenants, community managers, and admins.
+`Orden del Margen` is a community-first web MVP. It supports member identity and presence, referrals, non-monetary progression, moderated updates, and informational property context.
 
-## Main domains
+## Domains
 
-### 1. Property domain
-- property information
-- tenants and owners
-- lease and document references
-- maintenance history
+### Community
 
-### 2. Community domain
 - members and profiles
+- user-controlled presence/status
+- communities and memberships
 - announcements
-- events and participation
-- communication channels
+- referrals and progression events
+- member-owned topics
+- community quests
+- knowledge-based PvP scores
+- non-monetary coffee appreciation gifts
 
-### 3. Administration domain
-- dashboard widgets
-- insights and analytics
+### Property context
+
+- safe property summaries
+- area and community association
+- operational notes
+
+The MVP must not expose securities, share purchases, funds custody, payments, legal title/ownership records, or NFT/blockchain dependencies. Coffee gifts are appreciation records only, and PvP scores/points are not redeemable value.
+
+### Administration
+
 - moderation and access control
-- operational reporting
+- operational reporting (follow-up)
 
-## Suggested technology stack
+## Stack
 
-- Frontend: React + Vite
+- Frontend: static HTML/CSS/JavaScript for MVP validation
 - API: Node.js + Express
-- Database: PostgreSQL
-- Auth: JWT + roles
+- Persistence target: PostgreSQL
+- Authentication target: JWT + roles
 - Deployment: Docker + cloud hosting later
 
-## Suggested database tables
+The current demo uses in-memory data in `apps/api/src/data/communityData.js`. This makes the interaction loop easy to run locally while the migration establishes the intended persistence model.
 
-```sql
-users
-  id
-  email
-  password_hash
-  role
-  first_name
-  last_name
-  created_at
+## MVP tables
 
-properties
-  id
-  name
-  address
-  type
-  status
-  owner_id
-  created_at
-
-tenants
-  id
-  user_id
-  property_id
-  lease_start
-  lease_end
-  status
-
-maintenance_requests
-  id
-  property_id
-  requested_by
-  title
-  description
-  priority
-  status
-  created_at
-
-community_events
-  id
-  title
-  description
-  property_id
-  event_date
-  created_by
-
-announcements
-  id
-  title
-  body
-  property_id
-  created_by
-  created_at
+```text
+community_members
+communities
+community_memberships
+referrals
+progression_events
+community_announcements
 ```
 
-## MVP milestone
+The migration is `apps/api/migrations/002_create_community_mvp_tables.js`. Existing acquisition tables remain a separate internal domain and are not expanded by the community MVP.
 
-Focus on the first release:
+## API boundary
 
-- user auth
-- property listing
-- community announcement feed
-- maintenance request creation
-- dashboard overview
+`/api/community` owns the MVP community surface:
 
-## Future phases
+- dashboard aggregation
+- public member profiles and status updates
+- referral creation
+- community announcements
+- safe property summaries
 
-- payments and invoices
-- messaging system
-- automated reminders
-- advanced analytics
-- mobile app support
+Write operations must validate input and return explicit `4xx` responses. Moderator/admin authorization and persistent identity are follow-up hardening tasks before production use.
