@@ -47,8 +47,10 @@ knowledge challenges, and non-monetary coffee appreciation gifts.
 Community demo data is stored in memory. PostgreSQL migrations and
 some internal property backend foundations also exist.
 
-The current API startup requires PostgreSQL configuration, even
-though community interactions use in-memory data.
+The API starts in community demo mode without PostgreSQL configuration.
+When DATABASE_URL is configured, startup runs database migrations
+and enables internal property routes. Community interactions still
+use in-memory data in both modes.
 
 Digital land acquisition, guilds, resource competition, and land
 battles are future features. Existing knowledge challenges do not

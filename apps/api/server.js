@@ -1,19 +1,24 @@
 const app = require('./src/app');
 const pool = require('./src/db');
-const runMigrations = require('./src/migrate');
 
 const PORT = process.env.PORT || 3000;
 
 async function start() {
-  await runMigrations();
+  if (pool) {
+    const runMigrations = require('./src/migrate');
+    await runMigrations();
+  }
 
   const server = app.listen(PORT, () => {
-    console.log(`Orden del Magén API running on http://localhost:${PORT}`);
+    console.log(`Orden del Margen API running on http://localhost:${PORT}`);
+    console.log(pool ? 'Database configured' : 'Community demo mode: in-memory data');
   });
 
-  const shutdown = async () => {
+  const shutdown = () => {
     server.close(async () => {
-      await pool.end();
+      if (pool) {
+        await pool.end();
+      }
       process.exit(0);
     });
   };
@@ -24,6 +29,8 @@ async function start() {
 
 start().catch(async (error) => {
   console.error('Unable to start API:', error.message);
-  await pool.end();
+  if (pool) {
+    await pool.end();
+  }
   process.exitCode = 1;
 });
