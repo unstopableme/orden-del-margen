@@ -40,6 +40,24 @@ The API is available at http://localhost:3000. The community dashboard is availa
 http://localhost:3000/api/community/dashboard
 ```
 
+### Startup modes
+
+Without `DATABASE_URL` in the environment or `apps/api/.env`,
+the API starts in community demo mode. No PostgreSQL connection
+or migrations are required.
+
+Community data stays in memory. Changes last only until the API
+restarts, when the original demo data is restored.
+
+Internal routes under `/api/properties`, `/api/opportunities`,
+and `/api/acquisitions` are unavailable in demo mode and return 404.
+Informational summaries under `/api/community/properties` remain available.
+
+When `DATABASE_URL` is configured, the API connects to PostgreSQL,
+runs migrations before listening, and enables the internal routes.
+Community features still use in-memory demo data in this mode.
+An invalid database connection causes startup to fail.
+
 ### Open the frontend
 
 In another terminal:

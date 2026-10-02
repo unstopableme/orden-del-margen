@@ -1,8 +1,5 @@
 const express = require('express');
 const pool = require('./db');
-const acquisitionsRouter = require('./routes/acquisitions');
-const opportunitiesRouter = require('./routes/opportunities');
-const propertiesRouter = require('./routes/properties');
 const communityRouter = require('./routes/community');
 
 const app = express();
@@ -18,15 +15,24 @@ app.use((req, res, next) => {
 
   next();
 });
-app.use(express.json());
-app.use((req, res, next) => {
-  req.db = pool;
-  next();
-});
 
-app.use('/api/properties', propertiesRouter);
-app.use('/api/opportunities', opportunitiesRouter);
-app.use('/api/acquisitions', acquisitionsRouter);
+app.use(express.json());
+
+if (pool) {
+  const acquisitionsRouter = require('./routes/acquisitions');
+  const opportunitiesRouter = require('./routes/opportunities');
+  const propertiesRouter = require('./routes/properties');
+
+  app.use((req, res, next) => {
+    req.db = pool;
+    next();
+  });
+
+  app.use('/api/properties', propertiesRouter);
+  app.use('/api/opportunities', opportunitiesRouter);
+  app.use('/api/acquisitions', acquisitionsRouter);
+}
+
 app.use('/api/community', communityRouter);
 
 app.get('/api/health', (req, res) => {
