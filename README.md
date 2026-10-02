@@ -1,6 +1,11 @@
 # Orden del Margen
 
 Orden del Margen is a community-first platform for members to connect, contribute, and learn about the places they share. Property operations remain an internal follow-up domain; the MVP exposes only safe, informational community context.
+## Long-term vision
+
+See [Project Vision](docs/VISION.md) for the broader game and
+business plans, the boundary between digital land and real property,
+and decisions that remain open. The MVP below describes the current demo.
 
 ## MVP
 
