@@ -14,13 +14,16 @@ definition of `trigger_tower_levelup(p_player_id INT)`.
   constraints, account model, and migration definitions were not supplied and
   do not exist in this repository, so receipt does not make it repository-ready.
 
-No gameplay code has been added or executed as part of this review.
+The supplied Express server and PL/pgSQL function have not been integrated or
+executed. Separately, the isolated pure calculator and its direct unit tests
+described below have been added; they do not expose routes or access a database.
 
 ## Review classification
 
-The supplied Tower level-up and idle-production code is an implementation
-proposal only. It has not been executed or added to the runtime. The review now
-covers the Express application and the separately supplied PL/pgSQL function.
+The supplied Express application and Tower PL/pgSQL function remain proposals
+only. Neither has been executed, installed as a migration, or added to the
+runtime. The implemented scope is limited to the dependency-free idle-production
+calculator and tests; it contains no submitted route or SQL code.
 
 ### Confirmed design requirements
 
@@ -111,10 +114,10 @@ The proposal cannot be integrated directly with the current repository.
   `src/app.js`, database pool, migration runner, startup modes, and error
   boundaries.
 
-## Required safeguards before implementation
+## Required safeguards before runtime integration
 
-Implementation should not expose gameplay endpoints until all of these are in
-place:
+Runtime integration must not expose gameplay endpoints until all of these are
+in place:
 
 1. A persistent, authenticated Web2 account model with a stable primary key.
    Decide whether and how community profiles attach to that account. Do not
@@ -461,10 +464,16 @@ not introduce a duplicate player identity.
 Each migration should be reversible where data safety permits and run through
 the existing migration runner, never as an untracked pgAdmin operation.
 
-## Required verification before enabling the prototype
+## Required verification before enabling runtime integration
 
-- Unit tests for fractional carry, rounding, caps, duplicate building types,
-  unknown rules, clock boundaries, and summary aggregation.
+The isolated calculator suite covers its exported arithmetic contract. The
+following broader service, database, concurrency, and regression verification
+remains required before any runtime integration is enabled:
+
+- The existing direct unit tests cover fractional carry, exact payout
+  boundaries, caps, invalid rules, timestamp boundaries, and serialization.
+  Add service-level tests for duplicate building types and summary aggregation
+  when those integration components exist.
 - PostgreSQL tests proving that simultaneous collections cannot double-credit
   an interval and collection racing an upgrade applies each rate to the correct
   time segment.
