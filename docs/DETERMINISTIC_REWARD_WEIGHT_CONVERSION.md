@@ -2,11 +2,10 @@
 
 ## Status and boundary
 
-This document proposes conversion contract `reward-weight-v1` for explicit
-approval. Its scale, rounding, canonical inputs, evaluation rules, and resource
-limits are not adopted by this document. If approved, it would determine how the
-adopted fractional reward formula becomes the canonical integer weight consumed
-by the pure weekly allocator.
+The `reward-weight-v1` conversion contract is adopted. Its `10^12` scale, floor
+rounding, canonical exact rational inputs, proof requirements, and input and
+resource limits determine how the adopted fractional reward formula becomes the
+canonical integer weight consumed by the pure weekly allocator.
 
 This contract does not generate snapshots, decide eligibility, calculate mining
 activity, persist data, schedule payouts, or expose an API. A future snapshot
@@ -15,7 +14,7 @@ identifier, and reproducibility metadata.
 
 ## Canonical inputs
 
-The proposed converter accepts:
+The converter accepts:
 
 - `kingdomLevel`: a canonical positive decimal integer string; and
 - `portfolioNumerator` and `portfolioDenominator`: canonical decimal integer
@@ -48,8 +47,8 @@ must not substitute base-10 logarithms or binary floating-point approximations.
 
 ## Integer scale and rounding
 
-The proposed canonical integer scale is exactly `10^12` weight units per
-formula-weight unit. The proposed output is:
+The canonical integer scale is exactly `10^12` weight units per formula-weight
+unit. The output is:
 
 ```text
 integerWeight = floor(formulaWeight × 10^12)
@@ -101,10 +100,9 @@ runtime version, and database numeric settings. A future implementation must
 publish cross-language conformance vectors before snapshot generation is
 enabled.
 
-## Proposed input and resource limits
+## Input and resource limits
 
-These limits are part of the proposal and require approval with the other
-`reward-weight-v1` parameters:
+These limits are adopted as part of `reward-weight-v1`:
 
 - `kingdomLevel` is between `1` and `1000000000` inclusive;
 - `portfolioNumerator` and `portfolioDenominator` contain at most 256 decimal
