@@ -101,8 +101,9 @@ confirmed project requirements:
 - Eligible time-weighted mining-plot scores are aggregated exactly once across
   associated holdings under the established activity rules.
 - The 5% weekly payout cap applies to the participant's combined allocation.
-- Pet contributions remain deferred. Undistributed tokens remain in the Game
-  Vault.
+- Pet contributions remain deferred. Under the current confirmed rule, every
+  undistributed allocation, including a cap-clipped amount, remains in the Game
+  Vault and is not redistributed.
 - Participant verification, unassociated-account eligibility, and primary-
   account switching remain unresolved. Device or IP similarity alone must not
   establish a confirmed association.
@@ -126,7 +127,7 @@ This proposal is not implemented or confirmed:
 
 The supplied PostgreSQL view and JavaScript payout snippet are implementation
 proposals only. Neither has been executed, added to a migration, or integrated
-into the runtime.
+into the runtime. No payout implementation exists in this repository.
 
 The proposed `SUSPECT_UNASSOCIATED_POOL` is not adopted. Unassociated-account
 eligibility remains unresolved, so unassociated accounts must not be forced

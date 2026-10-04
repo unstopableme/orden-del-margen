@@ -95,12 +95,15 @@ complete Tower Level 3. Secondary accounts provide no additional multiplier,
 and the highest-level account is not selected automatically. Eligible
 time-weighted mining-plot scores are aggregated once across associated holdings,
 and the 5% cap applies to the participant's combined allocation. Pet
-contributions remain deferred and undistributed tokens remain in the Game Vault.
+contributions remain deferred. Under the current confirmed rule, every
+undistributed allocation, including a cap-clipped amount, remains in the Game
+Vault and is not redistributed.
 
 Participant verification, unassociated-account eligibility, and primary-account
 switching remain unresolved. Device or IP similarity alone cannot confirm an
 association. Wallet binding likewise does not prove that accounts belong to
-different people.
+different people. No shared unassociated-account pool is adopted, unassociated
+eligibility remains unresolved, and no payout implementation exists.
 
 Commercial proposals—including BTC chapter payments, a supporter bundle,
 browser-native crypto purchases, internal burn-velocity pricing, and a Beta

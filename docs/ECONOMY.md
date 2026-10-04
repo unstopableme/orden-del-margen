@@ -121,7 +121,9 @@ Payout = min(
 )
 ```
 
-- Undistributed amounts remain in the Game Vault.
+- Under the current confirmed rule, every undistributed allocation, including
+  an amount clipped by the 5% cap, remains in the Game Vault and is not
+  redistributed.
 - If no players qualify, the full pool remains in the Game Vault.
 - Estimated single-plot boosts are Bronze plot +28%, Silver plot +51%, and
   Gold plot +77%. These are estimates because final ring scores are unresolved.
@@ -135,6 +137,8 @@ curve or reset rule is assumed.
 Pet expeditions, guild raids, and leaderboard contributions are future
 upgrades. They cannot affect payouts until they have explicit scoring rules or
 separate reward budgets.
+
+No payout implementation currently exists.
 
 ## Supply reduction and locked balances
 

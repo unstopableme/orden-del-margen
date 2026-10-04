@@ -134,12 +134,14 @@ highest-level account as primary.
 Eligible time-weighted mining-plot scores are aggregated once across the
 participant's associated holdings. The 5% weekly payout cap applies to the
 participant's combined allocation, not separately to each associated account.
-Pet contributions remain deferred, and undistributed `$MARGEN` remains in the
-Game Vault.
+Pet contributions remain deferred. Under the current confirmed rule, every
+undistributed `$MARGEN` allocation, including an amount clipped by the 5% cap,
+remains in the Game Vault and is not redistributed.
 
 Participant verification, eligibility for accounts not associated with a
 confirmed participant, and primary-account switching remain unresolved. Device
-or IP similarity alone must not establish a confirmed association.
+or IP similarity alone must not establish a confirmed association. No shared
+unassociated-account pool is adopted, and no payout implementation exists.
 
 ## Open proposals
 
