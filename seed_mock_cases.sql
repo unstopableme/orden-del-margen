@@ -1,0 +1,38 @@
+-- DISPOSABLE-DATABASE FIXTURE PLAN ONLY. THIS FILE CONTAINS NO EXECUTABLE SQL.
+--
+-- Preconditions
+-- - Provision a new, isolated PostgreSQL database owned by the test harness.
+-- - Apply production migrations; never target a developer, staging, or production database.
+-- - Give each test a unique database/schema and dispose of it after the suite.
+-- - Use the application role when verifying append-only permissions.
+--
+-- Baseline fixture graph
+-- 1. Create an authorized reviewer account that is not a subject of the case.
+-- 2. Create two subject accounts and one review case in appealed state at version 3.
+-- 3. Persist an immutable original decision and its original history event.
+-- 4. Persist a pending appeal referencing the original decision and case.
+-- 5. Attach at least two reviewed, reviewer-visible evidence records to the case.
+-- 6. Capture baseline association, primary-account, reward-group, eligibility,
+--    snapshot, and payout state without creating new reward behavior.
+--
+-- Successful resolution
+-- - Resolve as approved: preserve the original decision, record that it was upheld,
+--   increment once, append one event, and persist one idempotent response atomically.
+-- - Resolve as overturned: preserve the original decision, record that the appeal
+--   succeeded, increment once, and make no association or reward changes.
+-- - Replay an identical key and payload; return the committed result without writes.
+--
+-- Conflicts and isolation
+-- - Submit expectedVersion 3 after version 4 commits; expect a typed conflict and no writes.
+-- - Reuse an idempotency key with a different payload; expect a typed mismatch and no writes.
+-- - Use two connections to force a real serialization failure or competing decision.
+--   Each retry uses a fresh transaction, handles only transient errors, and is finite.
+--
+-- Rollback
+-- - Inject failures after the case update, event insert, and idempotency insert.
+-- - Assert prior status/version, no new event or idempotency record, evidence still
+--   attached, original decision unchanged, and all association/reward baselines equal.
+-- - Verify the application role cannot update or delete history events.
+--
+-- Teardown
+-- - Close all connections, then drop only the unique disposable database/schema.
