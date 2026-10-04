@@ -138,10 +138,25 @@ Pet contributions remain deferred. Under the current confirmed rule, every
 undistributed `$MARGEN` allocation, including an amount clipped by the 5% cap,
 remains in the Game Vault and is not redistributed.
 
-Participant verification, eligibility for accounts not associated with a
-confirmed participant, and primary-account switching remain unresolved. Device
-or IP similarity alone must not establish a confirmed association. No shared
-unassociated-account pool is adopted, and no payout implementation exists.
+Unassociated accounts may play and retain account-specific progression but
+receive no weekly rewards, fallback-pool allocation, or retroactive allocation.
+Each confirmed participant explicitly designates one primary account. Accounts
+retain their own XP and Tower progression, and a newly designated primary must
+independently complete Tower Level 3. An approved switch activates at the next
+weekly boundary and is limited to once per four weekly periods, except for
+separately authorized and audited recovery exceptions. Verification evidence
+and approval criteria, the switch approval procedure, recovery-exception
+criteria, and the exact calendar boundary remain unresolved; Sunday 00:00 UTC
+is proposed. Device or IP similarity alone must not establish a confirmed
+association. No payout implementation exists.
+
+The later participant-review service must restrict case approval and reversal
+to authorized reviewers while allowing players to appeal cases involving their
+own accounts. Approval requires reviewed evidence and a recorded reason; device
+or IP similarity alone is never sufficient. Appeals request reconsideration and
+preserve the original decision. Confirmed participant associations are created
+through a separate audited operation, and case-history events are immutable to
+the application role.
 
 ## Open proposals
 

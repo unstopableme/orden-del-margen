@@ -42,6 +42,8 @@ claims.
 - Persistent PostgreSQL repositories for community data
 - Authentication, role-based authorization, and account recovery
 - Moderation tools and an audit trail
+- Participant-review cases with reviewer-only decisions, account-owner appeals,
+  immutable history, and separately audited association creation
 - Maintenance requests, vendors, and completion tracking
 - Notifications and an event calendar
 - Member and community engagement analytics
@@ -99,11 +101,22 @@ contributions remain deferred. Under the current confirmed rule, every
 undistributed allocation, including a cap-clipped amount, remains in the Game
 Vault and is not redistributed.
 
-Participant verification, unassociated-account eligibility, and primary-account
-switching remain unresolved. Device or IP similarity alone cannot confirm an
-association. Wallet binding likewise does not prove that accounts belong to
-different people. No shared unassociated-account pool is adopted, unassociated
-eligibility remains unresolved, and no payout implementation exists.
+Unassociated accounts may play and progress but receive no weekly rewards,
+fallback-pool allocation, or retroactive allocation. Each confirmed participant
+explicitly designates one primary account. Accounts retain their own XP and
+Tower progression, and a newly designated primary must independently complete
+Tower Level 3. An approved switch activates at the next weekly boundary and is
+limited to once per four weekly periods, except for separately authorized and
+audited recovery exceptions. Verification evidence and approval criteria, the
+switch approval procedure, recovery-exception criteria, and the exact calendar
+boundary remain unresolved; Sunday 00:00 UTC is proposed. Device or IP
+similarity alone cannot confirm an association, and wallet binding does not
+prove that accounts belong to different people. No payout implementation exists.
+
+The later review workflow must lock a case while atomically changing its status
+and appending history. Approval requires reviewed evidence and a reason; device
+or IP similarity alone is insufficient. Appeals preserve the original decision,
+and the application role cannot update or delete history events.
 
 Commercial proposals—including BTC chapter payments, a supporter bundle,
 browser-native crypto purchases, internal burn-velocity pricing, and a Beta

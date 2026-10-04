@@ -104,9 +104,16 @@ confirmed project requirements:
 - Pet contributions remain deferred. Under the current confirmed rule, every
   undistributed allocation, including a cap-clipped amount, remains in the Game
   Vault and is not redistributed.
-- Participant verification, unassociated-account eligibility, and primary-
-  account switching remain unresolved. Device or IP similarity alone must not
-  establish a confirmed association.
+- Unassociated accounts may play and progress but receive no weekly rewards,
+  fallback-pool allocation, or retroactive allocation. Each confirmed
+  participant explicitly designates one primary account. Accounts retain their
+  own XP and Tower progression, and a newly designated primary must independently
+  complete Tower Level 3. An approved switch activates at the next weekly
+  boundary and is limited to once per four weekly periods, except for separately
+  authorized and audited recovery exceptions. Verification evidence and approval
+  criteria, the switch approval procedure, recovery-exception criteria, and the
+  exact calendar boundary remain unresolved; Sunday 00:00 UTC is proposed.
+  Device or IP similarity alone must not establish a confirmed association.
 
 ### Proposed wallet binding
 
@@ -129,9 +136,10 @@ The supplied PostgreSQL view and JavaScript payout snippet are implementation
 proposals only. Neither has been executed, added to a migration, or integrated
 into the runtime. No payout implementation exists in this repository.
 
-The proposed `SUSPECT_UNASSOCIATED_POOL` is not adopted. Unassociated-account
-eligibility remains unresolved, so unassociated accounts must not be forced
-into a shared reward identity or cap group by implementation assumption.
+The proposed `SUSPECT_UNASSOCIATED_POOL` is not adopted. Unassociated accounts
+may play and progress but receive no weekly rewards, fallback-pool allocation,
+or retroactive allocation. They must not be forced into a shared reward identity
+or cap group.
 
 A live aggregation view is not an authoritative weekly distribution record.
 The next revision must consume a validated, immutable weekly snapshot that
@@ -151,6 +159,156 @@ zero weights, zero total weight, integer rounding, the participant-level 5%
 cap, retained Game Vault balance, large integers, and conservation of the base
 pool. Clipped amounts must remain in the Game Vault unless a separate
 redistribution rule is confirmed.
+
+### Participant-review service requirements
+
+The later application service must enforce all of the following regardless of
+the eventual participant-verification method:
+
+- Only authorized reviewers may approve or overturn cases. A player may submit
+  an appeal only for a case involving that player's own account.
+- A decision transaction must lock the case row, validate its current state,
+  update the case status, and insert the corresponding history event atomically.
+- Approval requires reviewed evidence and a nonempty reason. Device or IP
+  similarity may be evidence but cannot establish an association by itself.
+- An appeal is a request for reconsideration. It must reference and preserve the
+  original decision rather than rewriting it.
+- Creating a confirmed participant association is a separate, authorized,
+  audited operation; approving a case must not create one implicitly.
+- The application database role may insert case-history events but must have no
+  permission to update or delete them. Corrections use additive events.
+
+The persistence design therefore needs explicit case states, ownership links,
+reviewer authorization, evidence references, decision and appeal records,
+append-only history, association audit events, idempotency keys, and tests for
+concurrent decisions and cross-account appeal attempts. Database grants must be
+verified in integration tests; application checks alone are insufficient.
+
+#### Resolve-appeal endpoint contract
+
+```http
+POST /api/admin/review-cases/:caseId/resolve-appeal
+Idempotency-Key: <unique request key>
+```
+
+Example request body:
+
+```json
+{
+  "expectedVersion": 3,
+  "outcome": "overturned",
+  "reasonCode": "INDEPENDENT_ACCOUNT_CONTROLLERS",
+  "decisionNote": "Reviewed evidence supports independent users.",
+  "evidenceIds": ["123", "124"]
+}
+```
+
+This authorized-reviewer endpoint resolves a pending appeal against the
+identified review case. It does not resolve reward eligibility directly.
+
+- `Idempotency-Key` is required. The service must persist the key, request
+  fingerprint, and result in the same transaction as the resolution. Repeating
+  the same request returns the recorded result; reusing the key with different
+  input fails without mutation.
+- The service must verify reviewer authority, lock the case row, confirm that
+  the appeal belongs to that case and is pending, validate reviewed evidence
+  and a nonempty reason, update the appeal/case state, and append history in one
+  transaction.
+- `expectedVersion` must be a positive integer matching the locked case version.
+  A stale value fails with a conflict and makes no changes. A successful
+  resolution increments the case version exactly once.
+- `outcome` must be either `approved` when reconsideration upholds the original
+  decision or `overturned` when the appeal succeeds. `reasonCode` must be a
+  supported closed code; for
+  `INDEPENDENT_ACCOUNT_CONTROLLERS`, the reviewed evidence must support the
+  conclusion that the accounts have independent controllers.
+- `decisionNote` is required, nonempty, length-limited, and stored with the
+  decision event. `evidenceIds` must be a nonempty list of unique canonical
+  identifiers for reviewed evidence attached and visible to the case.
+- The original decision and its history remain unchanged. The new history event
+  records whether reconsideration upheld or overturned the decision, the
+  reviewer, reason, evidence references, idempotency key, and timestamp.
+- The endpoint must not create, delete, or move participant associations; alter
+  a designated primary account; assign an unassociated account to a reward
+  group; or change a weekly snapshot or payout record.
+- `SUSPECT_UNASSOCIATED_POOL` was not adopted. This endpoint must not create or
+  emulate that shared pool, and appeal resolution must not move accounts between
+  reward pools.
+
+If an overturned appeal warrants a confirmed participant association, an
+authorized reviewer must initiate the separate audited association operation
+afterward. That operation has its own authorization, idempotency, locking, and
+history requirements.
+
+Inside `reviewService.resolveAppeal`, one database transaction must execute the
+following sequence:
+
+1. Revalidate the actor's current reviewer permission and reject a reviewer who
+   is reviewing a case involving the reviewer's own account.
+2. Check the persisted idempotency record for this operation, actor, case, and
+   key. Return the original committed result for an identical fingerprint;
+   reject the key if its stored fingerprint differs. The database uniqueness
+   constraint and transaction must also serialize concurrent first uses of the
+   same key.
+3. Lock the case row with `SELECT ... FOR UPDATE`, require
+   `status = 'appealed'`, and compare the locked version with
+   `expectedVersion`.
+4. Verify that every evidence reference belongs to the locked case, is visible
+   to the reviewer, has been reviewed, and supports an outcome allowed by the
+   approved review policy.
+5. Set the resolved case status to `overturned` when the appeal succeeds or to
+   `approved` when reconsideration upholds the original decision. The original
+   decision record remains immutable in either path.
+6. Increment the case version once, append the audit event, and persist the
+   idempotent response atomically before commit.
+
+Any failure rolls back the status, version, audit event, and new idempotency
+record together. An overturned review does not grant reward eligibility or
+automatically revoke an existing confirmed participant association. Association
+corrections require a separate authorized and audited process. Unassociated
+accounts remain excluded from weekly rewards, and this workflow introduces no
+payout or snapshot endpoint.
+
+#### Proposed Express handler review
+
+The supplied `createResolveAppealHandler(reviewService)` and route registration
+are review material only. They have not been added to `src/app.js`, executed, or
+tested and are not a deployable endpoint.
+
+The proposal correctly places authenticated identity in trusted middleware,
+requires the `Idempotency-Key` header, applies bounded request validation,
+delegates decisions to a service, uses server-side permission and CSRF
+middleware, and forwards failures to a centralized error handler. Those route-
+level checks do not implement the service safeguards described above.
+
+The next revision must resolve these handler issues:
+
+- Use only the confirmed service vocabulary: `approved` means the original
+  decision was upheld after reconsideration, while `overturned` means the
+  appeal succeeded. Responses and audit events must make that meaning explicit.
+- Reject a missing, null, array, or otherwise non-object body as a typed 400
+  response instead of allowing destructuring to reach the error handler.
+- Require every `evidenceIds` element to be a string before applying the digit
+  pattern. Regular expressions coerce numeric JSON values, and mixed values
+  such as `"123"` and `123` can bypass the current duplicate check.
+- Define canonicalization for the idempotency key, reason code, decision note,
+  and evidence identifiers before calculating the request fingerprint. Reject
+  blank or unsupported idempotency-key characters, not only excessive length.
+- Define stable typed-error mappings, including unauthorized/forbidden,
+  missing case or appeal, stale `expectedVersion`, idempotency-key payload
+  mismatch, unavailable evidence, and invalid state transitions. Internal
+  details must not be exposed.
+- Confirm that authentication middleware always supplies a valid `accountId`
+  and that `reviews.resolve_appeal` is granted only to authorized reviewers.
+  Route middleware is defense in depth; the service must enforce authorization
+  again at its trust boundary.
+
+The service remains responsible for idempotency persistence, row locking,
+optimistic-version enforcement, appeal/case state validation, evidence access
+and reviewed status, atomic status/history writes, append-only history grants,
+the self-review prohibition, and the prohibition on association, reward-group,
+snapshot, or payout changes. No handler response may claim success until that
+transaction commits.
 
 ### Review safeguards and implementation recommendations
 
@@ -212,9 +370,11 @@ in place:
    caps, upgrade costs, and the handling of disabled or unknown buildings.
 8. A server-authoritative time policy using PostgreSQL `TIMESTAMPTZ` values and
    a controllable clock for tests.
-9. Before weekly rewards, approved participant-verification, unassociated-
-   account eligibility, and primary-account designation/switching procedures.
-   Wallet binding and device/IP similarity alone cannot establish association.
+9. Before weekly rewards, approved verification evidence and approval criteria,
+   a primary-account switch approval procedure, audited recovery-exception
+   criteria, and an exact weekly calendar boundary. Sunday 00:00 UTC remains a
+   proposal. Wallet binding and device/IP similarity alone cannot establish
+   association.
 
 ## Proposed schema requirements
 
