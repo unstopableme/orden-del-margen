@@ -39,7 +39,10 @@ public blockchain assets, but it is not part of the current implementation.
 The broader design includes a fixed initial supply of 100,000,000 `$MARGEN`
 with no gameplay minting. `$MARGEN` remains ownership-related in the vision,
 but its actual rights and legal structure are unresolved. `$DONCELLA` is the
-proposed game utility asset earned through tasks, battles, and trade. The
+proposed game utility asset earned through tasks, battles, and trade. “Bronze
+currency” is another name for `$DONCELLA`, not a separate resource. Currency
+costs, including Resource Chest purchases, are denominated in `$DONCELLA`.
+This naming does not affect the distinct Bronze plot mining-land tier. The
 reference relationship of 1 `$MARGEN` to 1,000 `$DONCELLA` is not a guaranteed
 exchange rate.
 

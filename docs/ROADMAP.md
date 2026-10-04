@@ -53,12 +53,17 @@ economic loop before an on-chain launch.
 
 Planned work includes:
 
-- Players, Kingdom Levels, digital land, active mining plots, and ring scores
+- Players, Kingdom Tower levels, digital land, active mining plots, and ring
+  scores
 - Solo and guild play, resource gathering, and battles
 - Fixed-supply internal `$MARGEN` allocation accounting
-- Weekly Game Vault reward pools and qualification at Kingdom Level 3
+- Weekly Game Vault distributions with eligibility unlocked by completing
+  Kingdom Tower Level 3, subject to available allocation and the per-player cap
+- `$DONCELLA` Armory Chest access unlocked by completing Kingdom Tower Level 3
 - Locked Web3 vault balances for gameplay earnings
-- `$DONCELLA` utility-asset gameplay
+- `$DONCELLA` utility-asset gameplay, including currency costs and Resource
+  Chest purchases; “Bronze currency” is the same asset, while Bronze plots are
+  a distinct mining-land tier
 - A free starter experience and proposed paid Season 1 chapter
 
 Pet expeditions, guild raids, and leaderboard contributions are upgrades to

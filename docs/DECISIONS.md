@@ -13,12 +13,13 @@ community-first demo described in the [README](../README.md).
 | Web2 accounting | Reconcile all internal allocations and balances against the fixed supply. | Accounting design remains to be implemented. |
 | On-chain migration | Premint at the later on-chain launch and prevent duplicate issuance during migration. | Detailed migration rules remain open. |
 | Gameplay rewards | Pay from weekly pools within the Game Vault's available allocation. | Not implemented; scoring details listed below remain open. |
-| Qualification | Require Kingdom Level 3 or above for weekly rewards. | Future game rule. |
+| Kingdom Tower Level 3 | Unlock eligibility for weekly `$MARGEN` distributions and access to `$DONCELLA` Armory Chests. | A distribution depends on qualified reward weight and the available weekly pool, is capped at 5% per player, and is not guaranteed. Eligibility does not confer an entitlement to company revenue. |
 | Reward weight | Use `KL^2.75 × [1 + 0.23 × ln(1 + Portfolio/10)]`. | Portfolio inputs and timing rules remain partly open. |
 | Payout cap | Cap a player at 5% of the available weekly pool. | Undistributed funds stay in the Game Vault. |
 | Plot maturity | A fueled, active mining plot reaches full operational score after 96 active hours. | The accumulation curve is unresolved. |
 | Ownership boundary | Keep `$MARGEN` ownership-related in the broader vision without assigning unresolved legal rights. | Internal balances and digital land confer no shares, income entitlement, redemption, or real-property rights. |
 | Utility asset | Use `$DONCELLA` as the proposed utility asset earned through tasks, battles, and trade. | “Proposed” describes its role; implementation and detailed utility rules remain future work. |
+| Currency naming | Treat “Bronze currency” as another name for `$DONCELLA`, not a separate resource; denominate currency costs and Resource Chest purchases in `$DONCELLA`. | The Bronze plot is a distinct mining-land tier. |
 | Reference relationship | Use `1 $MARGEN = 1,000 $DONCELLA` as a reference. | It is not a guaranteed exchange rate. |
 | Burns | Burn a defined portion of eligible `$MARGEN` spending and marketplace fees. | Rate and eligible transactions remain unresolved; burns do not promise price increases. |
 | Earnings lock | Put gameplay earnings into a locked Web3 vault balance for gradual post-launch unlocking. | Schedule, transfers, and locked uses remain unresolved. |
@@ -62,8 +63,8 @@ community-first demo described in the [README](../README.md).
 
 ### Weekly scoring
 
-- Final Bronze, Silver, and Gold ring scores; current estimated single-plot
-  boosts are +28%, +51%, and +77%
+- Final Bronze plot, Silver plot, and Gold plot ring scores; current estimated
+  single-plot boosts are +28%, +51%, and +77%
 - Shape of the 96-hour accumulation curve
 - Weekly reset behavior
 - Treatment of inactive or unfueled plots

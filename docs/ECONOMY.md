@@ -33,7 +33,12 @@ rights in real property.
 ### Utility asset
 
 `$DONCELLA` is the proposed utility asset earned through tasks, battles, and
-trade. The relationship
+trade. “Bronze currency” is an alternate name for `$DONCELLA`, not a separate
+currency or resource. All currency costs use `$DONCELLA`, including Resource
+Chest purchases.
+
+The Bronze plot remains a distinct mining-land tier; references to that tier
+do not mean `$DONCELLA`. The relationship
 
 ```text
 1 $MARGEN = 1,000 $DONCELLA
@@ -44,7 +49,10 @@ market rate.
 
 ## Weekly Game Vault rewards
 
-Players qualify at Kingdom Level 3 or above. For a qualified player:
+Completing Kingdom Tower Level 3 unlocks eligibility for weekly `$MARGEN`
+distributions and access to `$DONCELLA` Armory Chests. Eligibility does not
+guarantee a weekly payout or confer an entitlement to company revenue. For an
+eligible player, the qualified reward weight is:
 
 ```text
 Weight = KL^2.75 × [1 + 0.23 × ln(1 + Portfolio/10)]
@@ -53,7 +61,8 @@ Weight = KL^2.75 × [1 + 0.23 × ln(1 + Portfolio/10)]
 `Portfolio` is the cumulative time-weighted ring score of active, fueled
 mining plots. A plot reaches its full operational score after 96 active hours.
 
-The payout is:
+Each distribution depends on the player's qualified reward weight and the
+available weekly Game Vault pool, with a maximum allocation of 5% per player:
 
 ```text
 Payout = min(
@@ -64,8 +73,8 @@ Payout = min(
 
 - Undistributed amounts remain in the Game Vault.
 - If no players qualify, the full pool remains in the Game Vault.
-- Estimated single-plot boosts are Bronze +28%, Silver +51%, and Gold +77%.
-  These are estimates because final ring scores are unresolved.
+- Estimated single-plot boosts are Bronze plot +28%, Silver plot +51%, and
+  Gold plot +77%. These are estimates because final ring scores are unresolved.
 - Multiple plot effects do not add directly; their scores combine within the
   logarithmic portfolio term.
 
