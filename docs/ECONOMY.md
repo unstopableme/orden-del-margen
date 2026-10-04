@@ -49,7 +49,25 @@ market rate.
 
 ## Weekly Game Vault rewards
 
-### Proposed reward identity and wallet binding
+### Confirmed reward identity policy
+
+One designated primary progression account per confirmed participant supplies
+the Kingdom Level multiplier and must complete Kingdom Tower Level 3. Secondary
+accounts provide no additional Kingdom Level multiplier. The system must not
+automatically choose the participant's highest-level account as primary.
+
+Eligible time-weighted mining-plot scores are aggregated once across associated
+holdings under the established activity rules. The 5% weekly payout cap applies
+to the participant's combined allocation. Pet contributions remain deferred,
+and any undistributed `$MARGEN` remains in the Game Vault.
+
+Participant verification, unassociated-account eligibility, and rules for
+switching the designated primary account remain unresolved. Device or IP
+similarity alone is insufficient to establish a confirmed association.
+Unassociated accounts are not automatically combined into a shared eligibility
+or cap pool.
+
+### Proposed wallet binding
 
 The authenticated Web2 account is proposed as the primary game identity, with
 optional links to multiple supported wallets after proof of control. Each
@@ -57,12 +75,9 @@ supported wallet identity could be linked to only one account. This uniqueness
 constraint would prevent duplicate wallet binding, but would not establish that
 different accounts belong to different people.
 
-Participant-level treatment of multiple accounts remains unresolved. It must be
-defined before weekly rewards are enabled, including whether and how eligibility
-and the 5% allocation cap apply across accounts controlled by one participant.
-Portfolio aggregation would include only eligible mining assets under the
-established activity rules, with controls preventing duplicate attribution of
-the same asset through multiple wallets or accounts.
+Wallet binding is not participant verification. If adopted, duplicate-
+attribution controls must ensure that an eligible mining asset contributes only
+once through all associated wallet and account paths.
 
 ### Kingdom Tower Level 3 gate
 
@@ -84,21 +99,24 @@ and balances unchanged. Thresholds for future Tower levels are undefined.
 Completing Kingdom Tower Level 3 unlocks eligibility for weekly `$MARGEN`
 distributions and access to `$DONCELLA` Armory Chests. Eligibility does not
 guarantee a weekly payout or confer an entitlement to company revenue. For an
-eligible player, the qualified reward weight is:
+eligible confirmed participant, the qualified reward weight is:
 
 ```text
 Weight = KL^2.75 × [1 + 0.23 × ln(1 + Portfolio/10)]
 ```
 
-`Portfolio` is the cumulative time-weighted ring score of active, fueled
-mining plots. A plot reaches its full operational score after 96 active hours.
+`KL` comes only from the designated primary progression account. `Portfolio`
+is the cumulative time-weighted ring score of eligible active, fueled mining
+plots aggregated once across associated holdings. A plot reaches its full
+operational score after 96 active hours.
 
-Each distribution depends on the player's qualified reward weight and the
-available weekly Game Vault pool, with a maximum allocation of 5% per player:
+Each distribution depends on the participant's qualified reward weight and the
+available weekly Game Vault pool, with a maximum combined allocation of 5% per
+participant:
 
 ```text
 Payout = min(
-  available weekly pool × player weight / sum of qualified player weights,
+  available weekly pool × participant weight / sum of qualified participant weights,
   5% of available weekly pool
 )
 ```

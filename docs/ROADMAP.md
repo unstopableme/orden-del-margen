@@ -61,7 +61,8 @@ Planned work includes:
 - Solo and guild play, resource gathering, and battles
 - Fixed-supply internal `$MARGEN` allocation accounting
 - Weekly Game Vault distributions with eligibility unlocked by completing
-  Kingdom Tower Level 3, subject to available allocation and the per-player cap
+  Kingdom Tower Level 3 on the designated primary progression account, subject
+  to available allocation and the participant-level combined cap
 - `$DONCELLA` Armory Chest access unlocked by completing Kingdom Tower Level 3
 - A Level 3 gate requiring 4,500 lifetime Character XP, the authoritative
   account-level Tower progression counter, from Training
@@ -88,10 +89,18 @@ must leave Tower level and balances unchanged.
 The full lifetime Character XP total remains available for future progression;
 future Tower thresholds are undefined.
 
-Before weekly rewards are enabled, define participant-level treatment of
-multiple accounts, enforcement of the 5% allocation cap across those accounts,
-and duplicate-attribution safeguards for eligible mining assets. Wallet binding
-does not by itself prove that accounts belong to different people.
+For weekly rewards, each confirmed participant designates one primary
+progression account, which supplies the Kingdom Level multiplier and must
+complete Tower Level 3. Secondary accounts provide no additional multiplier,
+and the highest-level account is not selected automatically. Eligible
+time-weighted mining-plot scores are aggregated once across associated holdings,
+and the 5% cap applies to the participant's combined allocation. Pet
+contributions remain deferred and undistributed tokens remain in the Game Vault.
+
+Participant verification, unassociated-account eligibility, and primary-account
+switching remain unresolved. Device or IP similarity alone cannot confirm an
+association. Wallet binding likewise does not prove that accounts belong to
+different people.
 
 Commercial proposals—including BTC chapter payments, a supporter bundle,
 browser-native crypto purchases, internal burn-velocity pricing, and a Beta

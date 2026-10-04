@@ -92,7 +92,22 @@ confirmed project requirements:
 - The SQL returns free-form success or failure text, and the Express route
   interprets strings beginning with `FAILED` as client errors.
 
-### Proposed wallet binding and reward identity
+### Confirmed reward identity policy
+
+- Each confirmed participant has one designated primary progression account.
+  It supplies the Kingdom Level multiplier and must complete Tower Level 3.
+- Secondary accounts provide no additional Kingdom Level multiplier. The system
+  must not automatically designate the highest-level account as primary.
+- Eligible time-weighted mining-plot scores are aggregated exactly once across
+  associated holdings under the established activity rules.
+- The 5% weekly payout cap applies to the participant's combined allocation.
+- Pet contributions remain deferred. Undistributed tokens remain in the Game
+  Vault.
+- Participant verification, unassociated-account eligibility, and primary-
+  account switching remain unresolved. Device or IP similarity alone must not
+  establish a confirmed association.
+
+### Proposed wallet binding
 
 This proposal is not implemented or confirmed:
 
@@ -104,12 +119,37 @@ This proposal is not implemented or confirmed:
 - Wallet uniqueness would prevent one wallet from being attached to multiple
   accounts, but would not prove that different accounts are controlled by
   different people.
-- Portfolio would aggregate only mining assets that satisfy the established
-  ownership, activity, and fueling rules. The integration would need stable
-  asset identifiers and uniqueness controls to prevent duplicate attribution
-  through multiple wallet or account paths.
-- Weekly rewards must remain disabled until participant-level multi-account
-  treatment is defined for eligibility and the 5% allocation cap.
+- Wallet binding is not participant verification and cannot establish a
+  confirmed association by itself.
+
+### Reward eligibility and payout proposal review
+
+The supplied PostgreSQL view and JavaScript payout snippet are implementation
+proposals only. Neither has been executed, added to a migration, or integrated
+into the runtime.
+
+The proposed `SUSPECT_UNASSOCIATED_POOL` is not adopted. Unassociated-account
+eligibility remains unresolved, so unassociated accounts must not be forced
+into a shared reward identity or cap group by implementation assumption.
+
+A live aggregation view is not an authoritative weekly distribution record.
+The next revision must consume a validated, immutable weekly snapshot that
+captures at least the reward period, snapshot time, confirmed participant and
+account associations, designated primary account, completed Tower level,
+deduplicated eligible mining-plot scores, calculated weight, and the applicable
+pool and cap inputs. Snapshot validation and payout persistence must make
+retries idempotent and preserve an auditable explanation of every allocation
+and retained amount.
+
+The supplied JavaScript is incomplete: its `basePool` conditional is truncated,
+and the validation and `totalWeight` construction needed by the later formula
+are absent. No function was added or tested. A later proposal must provide one
+complete CommonJS function using `$MARGEN` terminology plus direct tests for
+invalid pool values, invalid or duplicate participant records, negative and
+zero weights, zero total weight, integer rounding, the participant-level 5%
+cap, retained Game Vault balance, large integers, and conservation of the base
+pool. Clipped amounts must remain in the Game Vault unless a separate
+redistribution rule is confirmed.
 
 ### Review safeguards and implementation recommendations
 
@@ -171,9 +211,9 @@ in place:
    caps, upgrade costs, and the handling of disabled or unknown buildings.
 8. A server-authoritative time policy using PostgreSQL `TIMESTAMPTZ` values and
    a controllable clock for tests.
-9. Before weekly rewards, a participant-level policy for multiple accounts,
-   eligibility, and the 5% allocation cap. Wallet binding alone cannot supply
-   that policy or establish personhood.
+9. Before weekly rewards, approved participant-verification, unassociated-
+   account eligibility, and primary-account designation/switching procedures.
+   Wallet binding and device/IP similarity alone cannot establish association.
 
 ## Proposed schema requirements
 
@@ -386,7 +426,8 @@ The submitted function is not safe to integrate unchanged:
   contract. Stable result codes or typed errors are needed instead.
 - The Level 3 success string says the weekly reward pool is "unlocked." The
   approved meaning is eligibility after completed Level 3, subject to the
-  available allocation and per-player cap; it is not a guaranteed payout.
+  available allocation and participant-level combined cap; it is not a
+  guaranteed payout.
 - The function assumes the caller already owns the surrounding transaction.
   PostgreSQL functions execute within the caller's transaction, but that alone
   does not fix the incomplete lock set, missing audit records, or retry safety.
@@ -447,8 +488,11 @@ The supplied material does not decide the following. They must remain open:
 - when Idle Expeditions/Adventures will be implemented; their timing remains
   separate from their confirmed eligibility as a Character XP source;
 - the Character XP thresholds and other gates for Tower levels after Level 3;
-- how accounts are determined to belong to one participant and how weekly
-  eligibility and the 5% allocation cap apply across those accounts;
+- how participant identity and account associations are verified;
+- whether and how accounts not associated with a confirmed participant can
+  qualify for weekly rewards;
+- how a participant initially designates and later switches the primary
+  progression account, including timing and anti-abuse constraints;
 - supported wallet identity formats, networks, proof-of-control challenges,
   rotation/revocation/recovery behavior, and verification expiry;
 - canonical mining-asset identity and conflict handling needed to prevent

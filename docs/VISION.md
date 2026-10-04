@@ -123,19 +123,31 @@ Its points and coffee gifts have no cash value or ownership rights.
 These tracks may share infrastructure without sharing ownership
 rules or access permissions.
 
+## Confirmed reward identity policy
+
+Each confirmed participant designates one primary progression account. That
+account supplies the Kingdom Level multiplier and must complete Kingdom Tower
+Level 3 for the participant to qualify. Secondary accounts supply no additional
+Kingdom Level multiplier, and the system must not automatically choose the
+highest-level account as primary.
+
+Eligible time-weighted mining-plot scores are aggregated once across the
+participant's associated holdings. The 5% weekly payout cap applies to the
+participant's combined allocation, not separately to each associated account.
+Pet contributions remain deferred, and undistributed `$MARGEN` remains in the
+Game Vault.
+
+Participant verification, eligibility for accounts not associated with a
+confirmed participant, and primary-account switching remain unresolved. Device
+or IP similarity alone must not establish a confirmed association.
+
 ## Open proposals
 
 The authenticated Web2 account is proposed as the primary game identity. Wallet
 linking would remain optional: an account could link multiple supported wallets
 after proof of control, while each supported wallet identity could link to only
 one account. Wallet binding would not prove that separate accounts belong to
-separate people.
-
-Before weekly rewards are enabled, the project must define how multiple
-accounts controlled by one participant affect eligibility and the 5% allocation
-cap. Portfolio aggregation would include only eligible mining assets under the
-established activity rules and would require safeguards against attributing the
-same asset more than once.
+separate people and cannot by itself confirm a participant association.
 
 The use of a public blockchain is planned for a later phase, but the network,
 including Polygon, remains unconfirmed. Tradable NFTs for pet cards and
