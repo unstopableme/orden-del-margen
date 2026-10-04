@@ -17,6 +17,7 @@ community-first demo described in the [README](../README.md).
 | Level 3 Character XP gate | Require at least 4,500 lifetime Character XP, the authoritative account-level Tower progression counter. Qualifying sources are Training Grounds, Arena Stage Victories, Bounty Board tasks, and completed Idle Expeditions/Adventures. | Construction/building XP and community points are excluded. An upgrade never deducts, burns, reserves, or resets XP; the full total remains available for future progression. Adventure eligibility does not determine implementation timing, and future Tower thresholds are undefined. |
 | Level 3 equipment and cost boundary | Require Tier I-or-higher gear equipped in all six main-avatar slots: Weapon, Armor, Helmet, Boots, Ring, and Amulet. | Inventory ownership alone does not qualify, and equipment is not consumed. Only specified `$DONCELLA` and material costs may be consumed. Failed prerequisites leave Tower level and balances unchanged. |
 | Reward weight | Use `KL^2.75 × [1 + 0.23 × ln(1 + Portfolio/10)]`. | Portfolio inputs and timing rules remain partly open. |
+| Reward-weight conversion | Use `reward-weight-v1` with canonical exact rational inputs, exact constants, a `10^12` scale, floor rounding, proof-based deterministic evaluation, and the specified input and resource limits. | The contract parameters are adopted. Event-to-Portfolio construction, converter implementation, nonzero conformance vectors, snapshot generation, persistence, and runtime integration remain pending. |
 | Payout cap | Cap a confirmed participant's combined allocation at 5% of the available weekly pool. | Under the current confirmed rule, every undistributed allocation, including a cap-clipped amount, stays in the Game Vault and is not redistributed. A pure calculator exists; snapshot persistence and payout integration do not. |
 | Reward identity | Each confirmed participant explicitly designates one primary progression account for the Kingdom Level multiplier; that account must independently complete Tower Level 3. Accounts retain their own XP and Tower progression. | Secondary accounts add no Kingdom Level multiplier, and the system must not automatically select the highest-level account. Unassociated accounts may play and progress but receive no weekly rewards, fallback-pool allocation, or retroactive allocation. An approved primary-account switch activates at the next weekly boundary and is limited to once per four weekly periods, except for separately authorized and audited recovery exceptions. |
 | Participant aggregation | Aggregate eligible time-weighted mining-plot scores once across associated holdings and apply the 5% weekly payout cap to the participant's combined allocation. | Duplicate attribution is prohibited. Pet contributions remain deferred, and undistributed tokens remain in the Game Vault. |
@@ -35,11 +36,6 @@ community-first demo described in the [README](../README.md).
 
 ## Proposals under consideration
 
-- Adopt `reward-weight-v1`: exact rational inputs and constants, a proposed
-  `10^12` scale, floor rounding, enclosing arbitrary-precision proof, explicit
-  input/resource limits, and failure rather than platform floating-point
-  fallback. Portfolio construction, implementation, conformance vectors, and
-  snapshot integration remain pending.
 - Require an approved identity-proofing result plus a fresh account-key
   challenge for every account being associated. Treat HSM or hardware
   attestation as optional supplementary evidence, not an ordinary-player
