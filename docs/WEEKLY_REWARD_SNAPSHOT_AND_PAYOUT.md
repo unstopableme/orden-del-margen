@@ -35,13 +35,14 @@ The payout calculator consumes only canonical nonnegative integer weight
 strings. It does not evaluate the fractional reward formula or convert its
 result into an integer.
 
-The deterministic formula-to-integer conversion remains a separate unresolved
-snapshot requirement. A later decision must specify the decimal or fixed-point
-representation, scale, exponent and logarithm precision, rounding mode,
-implementation compatibility requirements, canonical serialization, and bounds.
-No conversion parameters are adopted or implied by this contract or calculator.
-Until those parameters are approved, a snapshot producer cannot claim that its
-integer weights are authoritative payout inputs.
+The deterministic conversion is proposed as `reward-weight-v1` in
+[Deterministic reward-weight conversion](DETERMINISTIC_REWARD_WEIGHT_CONVERSION.md).
+Its exact rational inputs, exact constants, `10^12` scale, floor rounding,
+proof rules, and resource limits remain proposed pending approval. The converter
+implementation, Portfolio rational construction, conformance vectors, and
+snapshot integration also remain pending. Until the parameters are approved and
+those pieces pass review, a snapshot producer cannot claim that its integer
+weights are authoritative payout inputs.
 
 ## Pure calculator
 
