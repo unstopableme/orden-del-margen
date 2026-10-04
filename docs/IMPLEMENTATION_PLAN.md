@@ -184,6 +184,36 @@ balances or rates.
 
 The supplied collection loop is not safe as written.
 
+### Isolated calculator contract
+
+The isolated calculator in `apps/api/src/gameplay/idleProduction.js` implements
+only deterministic production arithmetic. It has no database, HTTP, account,
+or community-runtime dependency.
+
+- Time is represented as canonical UTC ISO timestamps with millisecond
+  precision. Elapsed time is calculated as an exact integer number of
+  milliseconds.
+- Fractional production is a rational number with the fixed denominator
+  `3,600,000`, the number of milliseconds in an hour. The persisted
+  `carryNumerator` is a nonnegative decimal string smaller than that
+  denominator. Its unit is "asset-unit milliseconds." For example, 500 ms at
+  45 units/hour adds exactly `22,500` to the numerator.
+- Whole credited units and carry numerators are returned as decimal strings so
+  the result survives JSON serialization without floating-point conversion.
+- New accrual is limited to 8 hours for a Level 1 building and 12 hours for a
+  Level 2 building. Time beyond the limit is reported as discarded and the
+  settlement timestamp still advances to the requested settlement time.
+- Previously carried production is never discarded by the storage-time cap.
+  It is added to the capped new accrual before whole units are paid, and any
+  remainder is carried forward.
+- Repeated settlements over the same uncapped active duration produce the same
+  total whole units and final carry as one settlement over that duration.
+- The calculator recognizes `doncella_bank` and returns the `$DONCELLA` asset;
+  it does not introduce a separate Bronze currency.
+
+The fixed denominator is an implementation choice for this millisecond-based
+prototype, not approval of the submitted rates, building types, or game rules.
+
 ### Concurrency
 
 Two collection requests can select the same `last_collected_at`, calculate the
@@ -207,21 +237,12 @@ errors rather than silently succeeding.
 
 ### Fractional production
 
-`Math.floor(elapsedSeconds * hourlyRate / 3600)` discards every fractional
-remainder while still advancing `last_collected_at`. Frequent collection would
-therefore lose more production than infrequent collection.
-
-Choose and document one exact approach before implementation:
-
-- store a fixed-point remainder per building and carry it into the next
-  settlement; or
-- store production in an indivisible subunit and convert to display units at
-  the boundary.
-
-In either case, perform the calculation with integer or PostgreSQL `NUMERIC`
-arithmetic, define the scale and rounding rule, and test intervals that do not
-produce a whole unit. The final storage-cap boundary must also specify whether
-fractional carry survives time discarded beyond the cap.
+`Math.floor(elapsedSeconds * hourlyRate / 3600)` in the submitted route
+discards every fractional remainder while still advancing `last_collected_at`.
+The isolated calculator replaces that behavior with the exact rational carry
+described above. Future persistence must store the numerator as an exact
+integer and must not round it through JavaScript `Number` or a floating-point
+database column.
 
 ### Other collection issues
 
@@ -254,6 +275,11 @@ database timestamp using the old rule version, preserve the fractional carry,
 validate requirements, debit exact costs with ledger entries, change the
 building level, record an upgrade event, and commit. A concurrent collection
 must wait and then observe the new `last_settled_at` and level.
+
+Building upgrades and any active, fueled, paused, disabled, or similar activity
+change must first settle through one authoritative timestamp under the old
+rate and old activity state. Only then may the transaction change the rate or
+state. This prevents a new rate or state from being applied retroactively.
 
 The accounting design must also decide:
 
@@ -322,6 +348,35 @@ balance/equipment row it validates, use an idempotency key, verify the expected
 current level, debit costs and write ledger entries atomically, then record the
 new level and audit event.
 
+## Remaining integration requirements
+
+The pure calculator is not authorization to add a collection endpoint. Runtime
+integration remains blocked on all of the following:
+
+- **Authenticated identity:** derive the acting account from a verified
+  session. Never trust a request-body or URL `playerId`.
+- **Consistent locking:** collection, building upgrades, activity changes, and
+  Tower progression must lock the account, business rows, balances, and other
+  validated state in one documented, stable order. Business rows must be
+  locked before their settlement timestamps or carry values are used.
+- **Atomic balances:** settlement-state updates, exact balance credits, and
+  immutable ledger entries must commit in the same transaction.
+- **Missing asset rows:** define whether canonical balance rows are provisioned
+  with an account or created by a constrained atomic upsert. A missing row must
+  never allow a settlement timestamp to advance without its credit.
+- **Retry handling:** accept an idempotency key, persist the outcome, safely
+  return the original result for duplicate requests, and define bounded retry
+  behavior for serialization failures or deadlocks.
+- **Progression gates:** approve and enforce the account, XP, building-type,
+  equipment, cost, and Tower-level rules before enabling Tower progression.
+  Community points and knowledge scores must not silently satisfy gameplay
+  gates.
+
+PostgreSQL integration must also define an exact integer column and constraint
+for `carryNumerator`, preserve millisecond timestamps end to end, use one
+database-derived settlement timestamp per transaction, and verify affected-row
+counts. No `ALTER TABLE` statement from the proposal has been executed.
+
 ## Unresolved design choices
 
 The supplied material does not decide the following. They must remain open:
@@ -340,35 +395,40 @@ The supplied material does not decide the following. They must remain open:
 - idle-building ownership limits and whether duplicate building types are
   allowed;
 - authoritative rates and storage caps beyond the two proposed levels;
-- the fixed-point scale and rounding/carry policy for fractional production;
-- behavior of fractional carry at storage cap and after building upgrades;
 - active, fueled, paused, disabled, and upgrading-state production rules;
 - upgrade duration, cancellation, refund, and failure rules;
-- whether `bronze_bank` should be renamed and what gameplay action produces
-  `$DONCELLA`;
+- whether `doncella_bank` is an approved building type and what gameplay action
+  produces `$DONCELLA`;
 - whether Armory Chests and Resource Chests are distinct systems, along with
   their prices, contents, limits, and access rules; and
 - whether any idle-produced resource may ever affect Portfolio. Current design
   defines Portfolio through active, fueled mining plots, so no connection may
   be assumed.
 
-## Proposed isolated prototype files
+## Isolated prototype files
 
-No files below should be created until the account key and open rules are
-resolved. A likely repository-aligned layout is:
+The only implemented gameplay files are the pure calculator and its direct
+unit tests:
+
+```text
+apps/api/src/gameplay/idleProduction.js
+apps/api/test/gameplay/idleProduction.test.js
+```
+
+No route, migration, model, job, or balance integration has been added. Once
+the account key and open rules are resolved, a possible repository-aligned
+layout for later work is:
 
 ```text
 apps/api/migrations/003_create_gameplay_core_tables.js
 apps/api/migrations/004_create_gameplay_rule_tables.js
 apps/api/migrations/005_create_gameplay_ledgers.js
 apps/api/migrations/006_create_gameplay_upgrade_function.js
-apps/api/src/gameplay/production.js
 apps/api/src/gameplay/towerUpgrades.js
 apps/api/src/models/KingdomBuilding.js
 apps/api/src/models/KingdomTower.js
 apps/api/src/models/GameAssetLedger.js
 apps/api/src/routes/gameplay.js
-apps/api/test/gameplay/production.test.js
 apps/api/test/gameplay/production.postgres.test.js
 apps/api/test/gameplay/towerUpgrades.postgres.test.js
 ```
