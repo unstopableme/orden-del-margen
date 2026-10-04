@@ -52,4 +52,9 @@ test('checklist uses appeal meanings and forbids adjacent mutations', () => {
   assert.equal(checklist.outcomeMeaning, 'ORIGINAL_DECISION_UPHELD');
   assert.ok(checklist.checks.some((item) => item.includes('Do not create, delete, correct, or move')));
   assert.ok(checklist.checks.some((item) => item.includes('reward groups')));
+  assert.deepEqual(checklist.unresolvedPolicy, [
+    'participant verification method and acceptable evidence',
+    'qualification criteria and decision procedure for accounts not associated with a confirmed participant',
+    'timing, authorization, and anti-abuse controls for changing the designated primary account'
+  ]);
 });

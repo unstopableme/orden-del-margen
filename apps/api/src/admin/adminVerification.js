@@ -115,8 +115,8 @@ function buildAdminVerificationChecklist(input) {
     ]),
     unresolvedPolicy: Object.freeze([
       'participant verification method and acceptable evidence',
-      'unassociated-account reward eligibility',
-      'primary-account switching rules'
+      'qualification criteria and decision procedure for accounts not associated with a confirmed participant',
+      'timing, authorization, and anti-abuse controls for changing the designated primary account'
     ])
   });
 }
