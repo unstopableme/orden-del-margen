@@ -49,6 +49,38 @@ market rate.
 
 ## Weekly Game Vault rewards
 
+### Proposed reward identity and wallet binding
+
+The authenticated Web2 account is proposed as the primary game identity, with
+optional links to multiple supported wallets after proof of control. Each
+supported wallet identity could be linked to only one account. This uniqueness
+constraint would prevent duplicate wallet binding, but would not establish that
+different accounts belong to different people.
+
+Participant-level treatment of multiple accounts remains unresolved. It must be
+defined before weekly rewards are enabled, including whether and how eligibility
+and the 5% allocation cap apply across accounts controlled by one participant.
+Portfolio aggregation would include only eligible mining assets under the
+established activity rules, with controls preventing duplicate attribution of
+the same asset through multiple wallets or accounts.
+
+### Kingdom Tower Level 3 gate
+
+Level 3 requires at least 4,500 lifetime Character XP, the authoritative
+account-level Tower progression counter. Qualifying sources are Training Grounds, Arena Stage Victories, Bounty
+Board tasks, and completed Idle Expeditions/Adventures. Construction or
+building XP and community points are excluded. Adventures being an eligible
+XP source does not set their implementation timing.
+
+The main avatar must have Tier I-or-higher gear equipped in all six slots:
+Weapon, Armor, Helmet, Boots, Ring, and Amulet. Owning qualifying items in
+inventory without equipping them does not satisfy the gate. XP and equipment
+are prerequisites, not costs. An upgrade never deducts, burns, reserves, or
+resets Character XP and does not consume equipment. The full lifetime XP total
+remains available for future progression; only the specified `$DONCELLA` and
+material costs may be consumed. Any failed prerequisite must leave Tower level
+and balances unchanged. Thresholds for future Tower levels are undefined.
+
 Completing Kingdom Tower Level 3 unlocks eligibility for weekly `$MARGEN`
 distributions and access to `$DONCELLA` Armory Chests. Eligibility does not
 guarantee a weekly payout or confer an entitlement to company revenue. For an

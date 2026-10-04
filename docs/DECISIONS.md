@@ -14,6 +14,8 @@ community-first demo described in the [README](../README.md).
 | On-chain migration | Premint at the later on-chain launch and prevent duplicate issuance during migration. | Detailed migration rules remain open. |
 | Gameplay rewards | Pay from weekly pools within the Game Vault's available allocation. | Not implemented; scoring details listed below remain open. |
 | Kingdom Tower Level 3 | Unlock eligibility for weekly `$MARGEN` distributions and access to `$DONCELLA` Armory Chests. | A distribution depends on qualified reward weight and the available weekly pool, is capped at 5% per player, and is not guaranteed. Eligibility does not confer an entitlement to company revenue. |
+| Level 3 Character XP gate | Require at least 4,500 lifetime Character XP, the authoritative account-level Tower progression counter. Qualifying sources are Training Grounds, Arena Stage Victories, Bounty Board tasks, and completed Idle Expeditions/Adventures. | Construction/building XP and community points are excluded. An upgrade never deducts, burns, reserves, or resets XP; the full total remains available for future progression. Adventure eligibility does not determine implementation timing, and future Tower thresholds are undefined. |
+| Level 3 equipment and cost boundary | Require Tier I-or-higher gear equipped in all six main-avatar slots: Weapon, Armor, Helmet, Boots, Ring, and Amulet. | Inventory ownership alone does not qualify, and equipment is not consumed. Only specified `$DONCELLA` and material costs may be consumed. Failed prerequisites leave Tower level and balances unchanged. |
 | Reward weight | Use `KL^2.75 × [1 + 0.23 × ln(1 + Portfolio/10)]`. | Portfolio inputs and timing rules remain partly open. |
 | Payout cap | Cap a player at 5% of the available weekly pool. | Undistributed funds stay in the Game Vault. |
 | Plot maturity | A fueled, active mining plot reaches full operational score after 96 active hours. | The accumulation curve is unresolved. |
@@ -27,6 +29,11 @@ community-first demo described in the [README](../README.md).
 
 ## Proposals under consideration
 
+- Use the authenticated Web2 account as the primary game identity. Keep wallet
+  linking optional, allow multiple proof-of-control wallet links per account,
+  and permit each supported wallet identity to link to only one account.
+- Aggregate into Portfolio only eligible mining assets under the established
+  activity rules, with safeguards against duplicate asset attribution.
 - Use platform activity, developer treasury allocations, and in-game spending
   as pool-funding sources; revenue would not automatically become
   distributable `$MARGEN`.
@@ -71,6 +78,12 @@ community-first demo described in the [README](../README.md).
 - Time and method of the weekly scoring snapshot
 - Scoring rules or separate budgets for pet expeditions, guild raids, and
   leaderboard contributions
+- How multiple accounts controlled by one participant affect weekly reward
+  eligibility and application of the 5% allocation cap
+- How participant-level controls are established, given that wallet binding
+  does not prove different accounts belong to different people
+- Exact duplicate-attribution controls for mining assets linked through wallets
+  or accounts
 
 ### Supply, burns, and unlocking
 

@@ -55,11 +55,22 @@ Planned work includes:
 
 - Players, Kingdom Tower levels, digital land, active mining plots, and ring
   scores
+- A proposed authenticated-account identity model with optional proof-of-control
+  links to multiple wallets and one-account uniqueness per supported wallet
+  identity
 - Solo and guild play, resource gathering, and battles
 - Fixed-supply internal `$MARGEN` allocation accounting
 - Weekly Game Vault distributions with eligibility unlocked by completing
   Kingdom Tower Level 3, subject to available allocation and the per-player cap
 - `$DONCELLA` Armory Chest access unlocked by completing Kingdom Tower Level 3
+- A Level 3 gate requiring 4,500 lifetime Character XP, the authoritative
+  account-level Tower progression counter, from Training
+  Grounds, Arena Stage Victories, Bounty Board tasks, or completed Idle
+  Expeditions/Adventures, excluding construction/building XP and community
+  points
+- Tier I-or-higher gear equipped in all six main-avatar slots for Level 3;
+  inventory ownership alone does not qualify, XP and equipment are not
+  consumed, and only specified `$DONCELLA` and material costs may be charged
 - Locked Web3 vault balances for gameplay earnings
 - `$DONCELLA` utility-asset gameplay, including currency costs and Resource
   Chest purchases; “Bronze currency” is the same asset, while Bronze plots are
@@ -70,6 +81,17 @@ Pet expeditions, guild raids, and leaderboard contributions are upgrades to
 the level-and-land design, not prerequisites for the whole design. Each needs
 explicit scoring rules or a separate reward budget before it can affect
 payouts.
+
+Listing completed Idle Expeditions/Adventures as a Character XP source does not
+schedule or prioritize Adventure implementation. Failed Level 3 prerequisites
+must leave Tower level and balances unchanged.
+The full lifetime Character XP total remains available for future progression;
+future Tower thresholds are undefined.
+
+Before weekly rewards are enabled, define participant-level treatment of
+multiple accounts, enforcement of the 5% allocation cap across those accounts,
+and duplicate-attribution safeguards for eligible mining assets. Wallet binding
+does not by itself prove that accounts belong to different people.
 
 Commercial proposals—including BTC chapter payments, a supporter bundle,
 browser-native crypto purchases, internal burn-velocity pricing, and a Beta
