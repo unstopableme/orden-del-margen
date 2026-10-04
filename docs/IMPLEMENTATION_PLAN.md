@@ -265,8 +265,8 @@ following sequence:
 Any failure rolls back the status, version, audit event, and new idempotency
 record together. An overturned review does not grant reward eligibility or
 automatically revoke an existing confirmed participant association. Association
-corrections require a separate authorized and audited process. Unassociated-
-account reward eligibility remains unresolved, and this workflow introduces no
+corrections require a separate authorized and audited process. Unassociated
+accounts remain excluded from weekly rewards, and this workflow introduces no
 payout or snapshot endpoint.
 
 #### Proposed Express handler review
