@@ -145,10 +145,13 @@ retain their own XP and Tower progression, and a newly designated primary must
 independently complete Tower Level 3. An approved switch activates at the next
 weekly boundary and is limited to once per four weekly periods, except for
 separately authorized and audited recovery exceptions. Verification evidence
-and approval criteria, the switch approval procedure, recovery-exception
-criteria, and the exact calendar boundary remain unresolved; Sunday 00:00 UTC
-is proposed. Device or IP similarity alone must not establish a confirmed
-association. No payout implementation exists.
+and recovery procedures remain proposed and require explicit approval. Weekly
+periods run from Sunday 00:00 UTC inclusive to the following Sunday 00:00 UTC
+exclusive. Evidence and approval criteria, reviewer authority, recovery
+criteria, identity-provider selection, assurance profiles, and restricted-
+evidence retention remain unresolved. Device or IP similarity alone must not
+establish a confirmed association. A pure payout calculator exists; snapshot
+persistence, payout storage, scheduled execution, and an API do not.
 
 The later participant-review service must restrict case approval and reversal
 to authorized reviewers while allowing players to appeal cases involving their

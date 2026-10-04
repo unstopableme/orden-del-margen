@@ -110,9 +110,11 @@ confirmed project requirements:
   own XP and Tower progression, and a newly designated primary must independently
   complete Tower Level 3. An approved switch activates at the next weekly
   boundary and is limited to once per four weekly periods, except for separately
-  authorized and audited recovery exceptions. Verification evidence and approval
-  criteria, the switch approval procedure, recovery-exception criteria, and the
-  exact calendar boundary remain unresolved; Sunday 00:00 UTC is proposed.
+  authorized and audited recovery exceptions. Verification evidence, the switch
+  approval procedure, and recovery-exception criteria remain proposed and
+  require explicit approval. Weekly periods run from Sunday 00:00 UTC inclusive
+  to the following Sunday 00:00 UTC exclusive. Identity-provider selection,
+  assurance profiles, and restricted-evidence retention also remain unresolved.
   Device or IP similarity alone must not establish a confirmed association.
 
 ### Proposed wallet binding
@@ -132,9 +134,11 @@ This proposal is not implemented or confirmed:
 
 ### Reward eligibility and payout proposal review
 
-The supplied PostgreSQL view and JavaScript payout snippet are implementation
-proposals only. Neither has been executed, added to a migration, or integrated
-into the runtime. No payout implementation exists in this repository.
+The supplied PostgreSQL view and original JavaScript payout snippet remain
+proposal material and were not executed or added to a migration. A separate
+pure CommonJS calculator now implements only integer allocation, the 5% cap,
+and retained Game Vault accounting. Snapshot persistence, payout storage,
+scheduled execution, and an API remain unimplemented.
 
 The proposed `SUSPECT_UNASSOCIATED_POOL` is not adopted. Unassociated accounts
 may play and progress but receive no weekly rewards, fallback-pool allocation,
@@ -150,15 +154,14 @@ pool and cap inputs. Snapshot validation and payout persistence must make
 retries idempotent and preserve an auditable explanation of every allocation
 and retained amount.
 
-The supplied JavaScript is incomplete: its `basePool` conditional is truncated,
-and the validation and `totalWeight` construction needed by the later formula
-are absent. No function was added or tested. A later proposal must provide one
-complete CommonJS function using `$MARGEN` terminology plus direct tests for
-invalid pool values, invalid or duplicate participant records, negative and
-zero weights, zero total weight, integer rounding, the participant-level 5%
-cap, retained Game Vault balance, large integers, and conservation of the base
-pool. Clipped amounts must remain in the Game Vault unless a separate
-redistribution rule is confirmed.
+The original supplied JavaScript was incomplete: its `basePool` conditional was
+truncated, and validation and `totalWeight` construction were absent. The new
+pure calculator replaces that snippet and has direct tests for invalid pool
+values, invalid or duplicate participant records, negative and zero weights,
+zero total weight, integer rounding, the participant-level 5% cap, retained
+Game Vault balance, large integers, and conservation of the base pool. Clipped
+amounts remain in the Game Vault unless a separate redistribution rule is
+confirmed.
 
 ### Participant-review service requirements
 
@@ -370,11 +373,10 @@ in place:
    caps, upgrade costs, and the handling of disabled or unknown buildings.
 8. A server-authoritative time policy using PostgreSQL `TIMESTAMPTZ` values and
    a controllable clock for tests.
-9. Before weekly rewards, approved verification evidence and approval criteria,
-   a primary-account switch approval procedure, audited recovery-exception
-   criteria, and an exact weekly calendar boundary. Sunday 00:00 UTC remains a
-   proposal. Wallet binding and device/IP similarity alone cannot establish
-   association.
+9. Before weekly rewards, approve and implement verification evidence, reviewer
+   authority, primary-account switch, and individual recovery-exception
+   procedures. Implement the adopted Sunday-to-Sunday calendar contract. Wallet
+   binding and device/IP similarity alone cannot establish association.
 
 ## Proposed schema requirements
 
