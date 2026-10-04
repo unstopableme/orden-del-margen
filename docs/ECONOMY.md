@@ -49,29 +49,81 @@ market rate.
 
 ## Weekly Game Vault rewards
 
+### Confirmed reward identity policy
+
+One designated primary progression account per confirmed participant supplies
+the Kingdom Level multiplier and must complete Kingdom Tower Level 3. Secondary
+accounts provide no additional Kingdom Level multiplier. The system must not
+automatically choose the participant's highest-level account as primary.
+
+Eligible time-weighted mining-plot scores are aggregated once across associated
+holdings under the established activity rules. The 5% weekly payout cap applies
+to the participant's combined allocation. Pet contributions remain deferred,
+and any undistributed `$MARGEN` remains in the Game Vault.
+
+Participant verification, unassociated-account eligibility, and rules for
+switching the designated primary account remain unresolved. Device or IP
+similarity alone is insufficient to establish a confirmed association.
+Unassociated accounts are not automatically combined into a shared eligibility
+or cap pool.
+
+### Proposed wallet binding
+
+The authenticated Web2 account is proposed as the primary game identity, with
+optional links to multiple supported wallets after proof of control. Each
+supported wallet identity could be linked to only one account. This uniqueness
+constraint would prevent duplicate wallet binding, but would not establish that
+different accounts belong to different people.
+
+Wallet binding is not participant verification. If adopted, duplicate-
+attribution controls must ensure that an eligible mining asset contributes only
+once through all associated wallet and account paths.
+
+### Kingdom Tower Level 3 gate
+
+Level 3 requires at least 4,500 lifetime Character XP, the authoritative
+account-level Tower progression counter. Qualifying sources are Training Grounds, Arena Stage Victories, Bounty
+Board tasks, and completed Idle Expeditions/Adventures. Construction or
+building XP and community points are excluded. Adventures being an eligible
+XP source does not set their implementation timing.
+
+The main avatar must have Tier I-or-higher gear equipped in all six slots:
+Weapon, Armor, Helmet, Boots, Ring, and Amulet. Owning qualifying items in
+inventory without equipping them does not satisfy the gate. XP and equipment
+are prerequisites, not costs. An upgrade never deducts, burns, reserves, or
+resets Character XP and does not consume equipment. The full lifetime XP total
+remains available for future progression; only the specified `$DONCELLA` and
+material costs may be consumed. Any failed prerequisite must leave Tower level
+and balances unchanged. Thresholds for future Tower levels are undefined.
+
 Completing Kingdom Tower Level 3 unlocks eligibility for weekly `$MARGEN`
 distributions and access to `$DONCELLA` Armory Chests. Eligibility does not
 guarantee a weekly payout or confer an entitlement to company revenue. For an
-eligible player, the qualified reward weight is:
+eligible confirmed participant, the qualified reward weight is:
 
 ```text
 Weight = KL^2.75 × [1 + 0.23 × ln(1 + Portfolio/10)]
 ```
 
-`Portfolio` is the cumulative time-weighted ring score of active, fueled
-mining plots. A plot reaches its full operational score after 96 active hours.
+`KL` comes only from the designated primary progression account. `Portfolio`
+is the cumulative time-weighted ring score of eligible active, fueled mining
+plots aggregated once across associated holdings. A plot reaches its full
+operational score after 96 active hours.
 
-Each distribution depends on the player's qualified reward weight and the
-available weekly Game Vault pool, with a maximum allocation of 5% per player:
+Each distribution depends on the participant's qualified reward weight and the
+available weekly Game Vault pool, with a maximum combined allocation of 5% per
+participant:
 
 ```text
 Payout = min(
-  available weekly pool × player weight / sum of qualified player weights,
+  available weekly pool × participant weight / sum of qualified participant weights,
   5% of available weekly pool
 )
 ```
 
-- Undistributed amounts remain in the Game Vault.
+- Under the current confirmed rule, every undistributed allocation, including
+  an amount clipped by the 5% cap, remains in the Game Vault and is not
+  redistributed.
 - If no players qualify, the full pool remains in the Game Vault.
 - Estimated single-plot boosts are Bronze plot +28%, Silver plot +51%, and
   Gold plot +77%. These are estimates because final ring scores are unresolved.
@@ -85,6 +137,8 @@ curve or reset rule is assumed.
 Pet expeditions, guild raids, and leaderboard contributions are future
 upgrades. They cannot affect payouts until they have explicit scoring rules or
 separate reward budgets.
+
+No payout implementation currently exists.
 
 ## Supply reduction and locked balances
 

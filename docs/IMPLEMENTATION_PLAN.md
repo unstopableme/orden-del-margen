@@ -51,6 +51,21 @@ subject to qualified reward weight, the available weekly pool, and the 5% cap.
 Portfolio is the time-weighted ring score of active, fueled mining plots. No
 confirmed design connects the submitted idle-building yields to Portfolio.
 
+Kingdom Tower Level 3 requires at least 4,500 lifetime Character XP, the
+authoritative account-level Tower progression counter. Only Training Grounds, Arena Stage Victories,
+Bounty Board tasks, and completed Idle Expeditions/Adventures qualify.
+Construction/building XP and community points are excluded. Listing completed
+Adventures as an XP source does not decide when Adventures will be implemented.
+
+The Level 3 equipment prerequisite is Tier I-or-higher gear equipped on the
+main avatar in all six slots: Weapon, Armor, Helmet, Boots, Ring, and Amulet.
+Inventory ownership without equipped status does not qualify. Character XP and
+equipment are checked, not spent or consumed. An upgrade never deducts, burns,
+reserves, or resets Character XP; the full lifetime total remains available for
+future progression. Only specified `$DONCELLA` and material costs may be
+consumed. Any failed prerequisite must leave the Tower level and every balance
+unchanged. Thresholds for future Tower levels remain undefined.
+
 ### Choices made by the supplied proposals
 
 These are implementation and game-rule choices in the submitted code, not
@@ -76,6 +91,66 @@ confirmed project requirements:
   and 5 embers.
 - The SQL returns free-form success or failure text, and the Express route
   interprets strings beginning with `FAILED` as client errors.
+
+### Confirmed reward identity policy
+
+- Each confirmed participant has one designated primary progression account.
+  It supplies the Kingdom Level multiplier and must complete Tower Level 3.
+- Secondary accounts provide no additional Kingdom Level multiplier. The system
+  must not automatically designate the highest-level account as primary.
+- Eligible time-weighted mining-plot scores are aggregated exactly once across
+  associated holdings under the established activity rules.
+- The 5% weekly payout cap applies to the participant's combined allocation.
+- Pet contributions remain deferred. Under the current confirmed rule, every
+  undistributed allocation, including a cap-clipped amount, remains in the Game
+  Vault and is not redistributed.
+- Participant verification, unassociated-account eligibility, and primary-
+  account switching remain unresolved. Device or IP similarity alone must not
+  establish a confirmed association.
+
+### Proposed wallet binding
+
+This proposal is not implemented or confirmed:
+
+- The authenticated Web2 account would be the primary game identity. Wallet
+  linking would be optional and would not replace account authentication.
+- One account could link multiple supported wallet identities after proof of
+  control. Each supported wallet identity could link to only one account, with
+  uniqueness enforced by persistent data constraints.
+- Wallet uniqueness would prevent one wallet from being attached to multiple
+  accounts, but would not prove that different accounts are controlled by
+  different people.
+- Wallet binding is not participant verification and cannot establish a
+  confirmed association by itself.
+
+### Reward eligibility and payout proposal review
+
+The supplied PostgreSQL view and JavaScript payout snippet are implementation
+proposals only. Neither has been executed, added to a migration, or integrated
+into the runtime. No payout implementation exists in this repository.
+
+The proposed `SUSPECT_UNASSOCIATED_POOL` is not adopted. Unassociated-account
+eligibility remains unresolved, so unassociated accounts must not be forced
+into a shared reward identity or cap group by implementation assumption.
+
+A live aggregation view is not an authoritative weekly distribution record.
+The next revision must consume a validated, immutable weekly snapshot that
+captures at least the reward period, snapshot time, confirmed participant and
+account associations, designated primary account, completed Tower level,
+deduplicated eligible mining-plot scores, calculated weight, and the applicable
+pool and cap inputs. Snapshot validation and payout persistence must make
+retries idempotent and preserve an auditable explanation of every allocation
+and retained amount.
+
+The supplied JavaScript is incomplete: its `basePool` conditional is truncated,
+and the validation and `totalWeight` construction needed by the later formula
+are absent. No function was added or tested. A later proposal must provide one
+complete CommonJS function using `$MARGEN` terminology plus direct tests for
+invalid pool values, invalid or duplicate participant records, negative and
+zero weights, zero total weight, integer rounding, the participant-level 5%
+cap, retained Game Vault balance, large integers, and conservation of the base
+pool. Clipped amounts must remain in the Game Vault unless a separate
+redistribution rule is confirmed.
 
 ### Review safeguards and implementation recommendations
 
@@ -137,6 +212,9 @@ in place:
    caps, upgrade costs, and the handling of disabled or unknown buildings.
 8. A server-authoritative time policy using PostgreSQL `TIMESTAMPTZ` values and
    a controllable clock for tests.
+9. Before weekly rewards, approved participant-verification, unassociated-
+   account eligibility, and primary-account designation/switching procedures.
+   Wallet binding and device/IP similarity alone cannot establish association.
 
 ## Proposed schema requirements
 
@@ -146,8 +224,9 @@ Final foreign-key types must match the future authenticated account key.
 ### Account-owned gameplay state
 
 - `kingdom_towers`: one row per account, with non-null `account_id`, Tower
-  level, explicit gameplay-XP fields once selected, timestamps, and an
-  optimistic version or equivalent concurrency field.
+  level, the authoritative lifetime Character XP value backed by auditable
+  qualifying-source events, timestamps, and an optimistic version or
+  equivalent concurrency field.
 - `kingdom_buildings`: one row per owned building instance, with non-null
   `account_id`, constrained building type, constrained level, status,
   `last_settled_at TIMESTAMPTZ NOT NULL`, fractional-production carry, and
@@ -156,6 +235,13 @@ Final foreign-key types must match the future authenticated account key.
 - `game_asset_balances`: one row per account and asset code, with a nonnegative
   exact balance and a unique `(account_id, asset_code)` key. `$DONCELLA` should
   use one canonical code; no separate `bronze` asset should exist.
+
+If the wallet-binding proposal is approved, wallet links should reference the
+authenticated account key, record wallet type/network and a canonical wallet
+identity, store proof-of-control verification metadata, and enforce uniqueness
+for each supported wallet identity. Wallet links remain optional. Mining-asset
+attribution needs a separate uniqueness rule so the same asset cannot contribute
+to more than one Portfolio path.
 
 A normalized balance table is preferable to a wide `player_assets` row because
 it avoids dynamically interpolating column names and supports constraints and
@@ -313,11 +399,13 @@ The submitted function is not safe to integrate unchanged:
   count while a required type is absent. The idle proposal also defines six
   production types, while the Tower message refers to five baseline types.
 - The Level 3 equipment check proves only that the six named slots have an
-  equipped row. It does not validate an equipment tier, ownership constraints,
-  uniqueness enforced by schema, or whether equipment is consumed or retained.
-- `total_xp` is treated as authoritative global account XP, but this repository
-  has no authenticated account model or approved gameplay-XP definition. It
-  must not be populated from community points or knowledge scores by default.
+  equipped row. It does not validate the confirmed Tier I minimum, an
+  authenticated main-avatar association, ownership constraints, or uniqueness
+  enforced by schema. Inventory-only items must not satisfy the query.
+- `total_xp` is treated as authoritative global account XP, but the confirmed
+  counter is lifetime Character XP from the four qualifying source groups. The proposal
+  does not prove or audit those sources and must exclude construction/building
+  XP and community points.
 - Tower level and all balances are stored together in `player_assets`, with no
   supplied nonnegative checks, foreign keys, uniqueness constraint, or exact
   account-key definition. The update does not verify that exactly one row was
@@ -326,6 +414,12 @@ The submitted function is not safe to integrate unchanged:
   rule/version snapshot, or a caller-supplied idempotency key. A successful
   retry is therefore reported as a max-level failure rather than the result of
   the original request.
+- Although the submitted function returns before its balance update when its
+  explicit checks fail, the final implementation must guarantee that every
+  failed prerequisite or validation error leaves Tower level and all balances
+  unchanged. Character XP must never be deducted, burned, reserved, or reset,
+  and equipment must never be consumed. Only specified `$DONCELLA` and material
+  costs may be debited after every prerequisite succeeds.
 - The `bronze` balance conflicts with the confirmed `$DONCELLA` terminology.
   A canonical asset code must be selected without creating a second balance;
   Bronze mining land remains a separate concept.
@@ -333,7 +427,8 @@ The submitted function is not safe to integrate unchanged:
   contract. Stable result codes or typed errors are needed instead.
 - The Level 3 success string says the weekly reward pool is "unlocked." The
   approved meaning is eligibility after completed Level 3, subject to the
-  available allocation and per-player cap; it is not a guaranteed payout.
+  available allocation and participant-level combined cap; it is not a
+  guaranteed payout.
 - The function assumes the caller already owns the surrounding transaction.
   PostgreSQL functions execute within the caller's transaction, but that alone
   does not fix the incomplete lock set, missing audit records, or retry safety.
@@ -350,6 +445,10 @@ parsing strings beginning with `FAILED`. It must lock the Tower row and every
 balance/equipment row it validates, use an idempotency key, verify the expected
 current level, debit costs and write ledger entries atomically, then record the
 new level and audit event.
+
+These transactional requirements do not select an implementation location.
+The same confirmed rules and failure guarantees apply whether a later decision
+uses a PostgreSQL function or an application service.
 
 ## Remaining integration requirements
 
@@ -370,10 +469,9 @@ integration remains blocked on all of the following:
 - **Retry handling:** accept an idempotency key, persist the outcome, safely
   return the original result for duplicate requests, and define bounded retry
   behavior for serialization failures or deadlocks.
-- **Progression gates:** approve and enforce the account, XP, building-type,
-  equipment, cost, and Tower-level rules before enabling Tower progression.
-  Community points and knowledge scores must not silently satisfy gameplay
-  gates.
+- **Progression gates:** enforce the confirmed lifetime Character XP source and
+  equipped Tier I gear rules. Separately approve the still-proposed building,
+  exact resource cost, and Tower-level rules before enabling progression.
 
 PostgreSQL integration must also define an exact integer column and constraint
 for `carryNumerator`, preserve millisecond timestamps end to end, use one
@@ -384,17 +482,22 @@ counts. No `ALTER TABLE` statement from the proposal has been executed.
 
 The supplied material does not decide the following. They must remain open:
 
-- whether Level 3 requires a minimum equipment tier in addition to filling the
-  six proposed slots;
-- which XP counter qualifies a Tower upgrade: lifetime gameplay XP, spendable
-  XP, season XP, Tower-specific XP, or the proposed `total_xp` counter;
-- whether qualifying XP is consumed, reserved, or checked only;
-- XP sources and whether current community points or knowledge scores are
-  explicitly excluded (they should not be equated by implementation);
-- whether the proposed starting level of 1, maximum level of 3, resource
-  costs, and 4,500-XP Level 3 threshold are approved game rules;
-- whether equipment requirements mean ownership, equipped state, locking, or
-  consumption;
+- whether the proposed starting level of 1, maximum level of 3, and resource
+  upgrade costs are approved game rules;
+- how much Character XP each qualifying activity awards and how completion
+  events are verified, deduplicated, corrected, and audited;
+- when Idle Expeditions/Adventures will be implemented; their timing remains
+  separate from their confirmed eligibility as a Character XP source;
+- the Character XP thresholds and other gates for Tower levels after Level 3;
+- how participant identity and account associations are verified;
+- whether and how accounts not associated with a confirmed participant can
+  qualify for weekly rewards;
+- how a participant initially designates and later switches the primary
+  progression account, including timing and anti-abuse constraints;
+- supported wallet identity formats, networks, proof-of-control challenges,
+  rotation/revocation/recovery behavior, and verification expiry;
+- canonical mining-asset identity and conflict handling needed to prevent
+  duplicate Portfolio attribution;
 - idle-building ownership limits and whether duplicate building types are
   allowed;
 - authoritative rates and storage caps beyond the two proposed levels;

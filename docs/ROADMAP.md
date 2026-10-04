@@ -55,11 +55,23 @@ Planned work includes:
 
 - Players, Kingdom Tower levels, digital land, active mining plots, and ring
   scores
+- A proposed authenticated-account identity model with optional proof-of-control
+  links to multiple wallets and one-account uniqueness per supported wallet
+  identity
 - Solo and guild play, resource gathering, and battles
 - Fixed-supply internal `$MARGEN` allocation accounting
 - Weekly Game Vault distributions with eligibility unlocked by completing
-  Kingdom Tower Level 3, subject to available allocation and the per-player cap
+  Kingdom Tower Level 3 on the designated primary progression account, subject
+  to available allocation and the participant-level combined cap
 - `$DONCELLA` Armory Chest access unlocked by completing Kingdom Tower Level 3
+- A Level 3 gate requiring 4,500 lifetime Character XP, the authoritative
+  account-level Tower progression counter, from Training
+  Grounds, Arena Stage Victories, Bounty Board tasks, or completed Idle
+  Expeditions/Adventures, excluding construction/building XP and community
+  points
+- Tier I-or-higher gear equipped in all six main-avatar slots for Level 3;
+  inventory ownership alone does not qualify, XP and equipment are not
+  consumed, and only specified `$DONCELLA` and material costs may be charged
 - Locked Web3 vault balances for gameplay earnings
 - `$DONCELLA` utility-asset gameplay, including currency costs and Resource
   Chest purchases; “Bronze currency” is the same asset, while Bronze plots are
@@ -70,6 +82,28 @@ Pet expeditions, guild raids, and leaderboard contributions are upgrades to
 the level-and-land design, not prerequisites for the whole design. Each needs
 explicit scoring rules or a separate reward budget before it can affect
 payouts.
+
+Listing completed Idle Expeditions/Adventures as a Character XP source does not
+schedule or prioritize Adventure implementation. Failed Level 3 prerequisites
+must leave Tower level and balances unchanged.
+The full lifetime Character XP total remains available for future progression;
+future Tower thresholds are undefined.
+
+For weekly rewards, each confirmed participant designates one primary
+progression account, which supplies the Kingdom Level multiplier and must
+complete Tower Level 3. Secondary accounts provide no additional multiplier,
+and the highest-level account is not selected automatically. Eligible
+time-weighted mining-plot scores are aggregated once across associated holdings,
+and the 5% cap applies to the participant's combined allocation. Pet
+contributions remain deferred. Under the current confirmed rule, every
+undistributed allocation, including a cap-clipped amount, remains in the Game
+Vault and is not redistributed.
+
+Participant verification, unassociated-account eligibility, and primary-account
+switching remain unresolved. Device or IP similarity alone cannot confirm an
+association. Wallet binding likewise does not prove that accounts belong to
+different people. No shared unassociated-account pool is adopted, unassociated
+eligibility remains unresolved, and no payout implementation exists.
 
 Commercial proposals—including BTC chapter payments, a supporter bundle,
 browser-native crypto purchases, internal burn-velocity pricing, and a Beta

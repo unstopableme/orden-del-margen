@@ -46,6 +46,23 @@ This naming does not affect the distinct Bronze plot mining-land tier. The
 reference relationship of 1 `$MARGEN` to 1,000 `$DONCELLA` is not a guaranteed
 exchange rate.
 
+Kingdom Tower Level 3 requires at least 4,500 lifetime Character XP, the
+authoritative account-level Tower progression counter. Character XP may come from Training
+Grounds, Arena Stage Victories, Bounty Board tasks, and completed Idle
+Expeditions/Adventures. Construction or building XP and community points do not
+qualify. Naming Adventures as a qualifying source does not determine when that
+feature will be implemented; only completed eligible activities can award XP.
+
+The Level 3 equipment gate requires Tier I-or-higher gear equipped in all six
+main-avatar slots: Weapon, Armor, Helmet, Boots, Ring, and Amulet. Inventory
+ownership alone is insufficient. Character XP and equipped gear are
+prerequisites, not upgrade costs. An upgrade never deducts, burns, reserves, or
+resets Character XP and does not consume equipment; the full lifetime XP total
+remains available for future progression. Only the specified `$DONCELLA` and
+material costs may be consumed. A failed prerequisite check must leave the
+Tower level and all balances unchanged. Thresholds for later Tower levels are
+undefined.
+
 See [Economy](ECONOMY.md) for reward mechanics and commercial proposals,
 [Roadmap](ROADMAP.md) for delivery phases, and the
 [Decision register](DECISIONS.md) for confirmed and unresolved decisions.
@@ -106,7 +123,33 @@ Its points and coffee gifts have no cash value or ownership rights.
 These tracks may share infrastructure without sharing ownership
 rules or access permissions.
 
+## Confirmed reward identity policy
+
+Each confirmed participant designates one primary progression account. That
+account supplies the Kingdom Level multiplier and must complete Kingdom Tower
+Level 3 for the participant to qualify. Secondary accounts supply no additional
+Kingdom Level multiplier, and the system must not automatically choose the
+highest-level account as primary.
+
+Eligible time-weighted mining-plot scores are aggregated once across the
+participant's associated holdings. The 5% weekly payout cap applies to the
+participant's combined allocation, not separately to each associated account.
+Pet contributions remain deferred. Under the current confirmed rule, every
+undistributed `$MARGEN` allocation, including an amount clipped by the 5% cap,
+remains in the Game Vault and is not redistributed.
+
+Participant verification, eligibility for accounts not associated with a
+confirmed participant, and primary-account switching remain unresolved. Device
+or IP similarity alone must not establish a confirmed association. No shared
+unassociated-account pool is adopted, and no payout implementation exists.
+
 ## Open proposals
+
+The authenticated Web2 account is proposed as the primary game identity. Wallet
+linking would remain optional: an account could link multiple supported wallets
+after proof of control, while each supported wallet identity could link to only
+one account. Wallet binding would not prove that separate accounts belong to
+separate people and cannot by itself confirm a participant association.
 
 The use of a public blockchain is planned for a later phase, but the network,
 including Polygon, remains unconfirmed. Tradable NFTs for pet cards and
