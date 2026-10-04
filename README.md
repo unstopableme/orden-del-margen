@@ -7,6 +7,12 @@ See [Project Vision](docs/VISION.md) for the broader game and
 business plans, the boundary between digital land and real property,
 and decisions that remain open. The MVP below describes the current demo.
 
+Related design documents:
+
+- [Economy](docs/ECONOMY.md) — confirmed economic direction, proposed commercial models, and unresolved mechanics
+- [Roadmap](docs/ROADMAP.md) — implemented MVP scope and future delivery phases
+- [Decision register](docs/DECISIONS.md) — confirmed decisions, proposals, and open questions
+
 ## MVP
 
 - Member profiles and user-controlled presence/status

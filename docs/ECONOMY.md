@@ -1,0 +1,156 @@
+# Economy design
+
+This document separates confirmed project design direction from proposals and
+unresolved details. “Confirmed” describes an intended design, not an
+implemented feature, legally established right, promised return, or guarantee
+of regulatory treatment.
+
+None of these economic systems are part of the current community MVP. Current
+points, badges, knowledge scores, referrals, and coffee gifts have no cash
+value or ownership rights.
+
+## Confirmed design direction
+
+### Web2-first foundation
+
+- Build the baseline economic loop with a Web2-first architecture for
+  performance and development speed.
+- Treat regulatory stability as a design goal, not a guaranteed outcome.
+- Use a fixed initial supply of 100,000,000 `$MARGEN`; gameplay does not mint
+  additional `$MARGEN`.
+- During Web2, all internal allocations and balances must reconcile against
+  the fixed supply.
+- Premint the supply only at the later on-chain launch, with migration rules
+  that prevent internal balances from being issued a second time.
+- Distribute gameplay rewards from existing weekly allocations, limited by
+  the Game Vault's available budget.
+
+`$MARGEN` remains ownership-related in the broader vision, but its legal
+structure and actual rights are unresolved. Internal balances and digital land
+do not themselves confer shares, income entitlements, redemption rights, or
+rights in real property.
+
+### Utility asset
+
+`$DONCELLA` is the proposed utility asset earned through tasks, battles, and
+trade. The relationship
+
+```text
+1 $MARGEN = 1,000 $DONCELLA
+```
+
+is a reference only. It is not a guaranteed exchange, redemption, resale, or
+market rate.
+
+## Weekly Game Vault rewards
+
+Players qualify at Kingdom Level 3 or above. For a qualified player:
+
+```text
+Weight = KL^2.75 × [1 + 0.23 × ln(1 + Portfolio/10)]
+```
+
+`Portfolio` is the cumulative time-weighted ring score of active, fueled
+mining plots. A plot reaches its full operational score after 96 active hours.
+
+The payout is:
+
+```text
+Payout = min(
+  available weekly pool × player weight / sum of qualified player weights,
+  5% of available weekly pool
+)
+```
+
+- Undistributed amounts remain in the Game Vault.
+- If no players qualify, the full pool remains in the Game Vault.
+- Estimated single-plot boosts are Bronze +28%, Silver +51%, and Gold +77%.
+  These are estimates because final ring scores are unresolved.
+- Multiple plot effects do not add directly; their scores combine within the
+  logarithmic portfolio term.
+
+The 96-hour accumulation curve, weekly reset behavior, treatment of inactive
+plots, scoring snapshot, and final ring scores remain unresolved. No linear
+curve or reset rule is assumed.
+
+Pet expeditions, guild raids, and leaderboard contributions are future
+upgrades. They cannot affect payouts until they have explicit scoring rules or
+separate reward budgets.
+
+## Supply reduction and locked balances
+
+Confirmed direction:
+
+- Eligible spending and marketplace fees will burn a defined portion of
+  `$MARGEN`.
+- Burns reduce supply; they do not automatically increase price or an internal
+  reference value.
+- Gameplay earnings initially enter a locked Web3 vault balance and unlock
+  gradually after launch.
+
+Unresolved details:
+
+- Burn rates and which transactions are eligible
+- Unlock schedule
+- Transfer eligibility
+- Permitted uses while balances are locked
+
+## Pool funding and revenue destinations
+
+The following are proposals, not finalized funding rules:
+
+- Platform activity, developer treasury allocations, and in-game spending as
+  sources for reward pools
+- Revenue destinations for Beta Pioneers, the Game Vault, and LLC treasury
+  reinvestment
+
+Revenue does not automatically become distributable `$MARGEN`. Allocation
+percentages and vesting remain unresolved.
+
+## Commercial proposals
+
+### Access and content
+
+- Free starter with the tutorial and enough quests to experience the core loop
+- Season 1 chapter priced at an $8.99 equivalent and paid only in BTC,
+  containing a complete story/learning chapter and missions
+- Later supporter bundle with cosmetics or lore extras and no advantage in
+  earning cashable rewards
+
+### Browser-native purchases
+
+Direct crypto deposits for browser-native `$MARGEN` purchases are proposed.
+Supported assets, networks, custody arrangements, and delivery terms remain
+unresolved.
+
+An internal purchase price starting at €0.10 and increasing through a formula
+based exclusively on internal burn velocity is proposed. The formula,
+measurement period, and adjustment limits are unresolved. An internal price
+does not guarantee resale, redemption, or future market value, and external
+exchange prices may differ.
+
+### Beta Pioneers
+
+A pre-mint Beta Pioneer sale is proposed for early gamers who buy the
+book/chapter, test the game, report bugs, rate it, and provide feedback.
+
+Book purchase, token-allocation purchase, and tester recognition remain
+separate unless a bundle is explicitly defined. Presale price, allocation
+limits, eligibility, vesting, and delay or cancellation terms are unresolved.
+Whether purchases may improve reward-bearing progression is also unresolved.
+
+## Business context
+
+Café de la Doncella plans to explore a farmer-partnered coffee agroforestry
+carbon project in Colima, with possible expansion to other Mexican states.
+Carbon-credit income is potential future revenue, not an assumed operating
+budget or a promised reward source.
+
+## Boundaries
+
+- Digital land and internal balances do not grant real-property rights.
+- Playing the game does not make a player a shareholder.
+- Revenue is not automatically a token allocation or player distribution.
+- Supply reduction does not promise price appreciation.
+- Preparation for an on-chain launch does not guarantee a launch date,
+  exchange listing, liquidity, market value, or regulatory outcome.
