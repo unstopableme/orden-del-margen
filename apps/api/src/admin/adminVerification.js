@@ -114,9 +114,10 @@ function buildAdminVerificationChecklist(input) {
       'Do not change primary accounts, reward groups, eligibility, snapshots, or payouts.'
     ]),
     unresolvedPolicy: Object.freeze([
-      'participant verification method and acceptable evidence',
-      'qualification criteria and decision procedure for accounts not associated with a confirmed participant',
-      'timing, authorization, and anti-abuse controls for changing the designated primary account'
+      'verification evidence and approval criteria',
+      'exact weekly calendar boundary; Sunday 00:00 UTC is proposed',
+      'primary-account switch approval procedure',
+      'criteria and authorization for audited recovery exceptions'
     ])
   });
 }
