@@ -35,6 +35,11 @@ community-first demo described in the [README](../README.md).
 
 ## Proposals under consideration
 
+- Adopt `reward-weight-v1`: exact rational inputs and constants, a proposed
+  `10^12` scale, floor rounding, enclosing arbitrary-precision proof, explicit
+  input/resource limits, and failure rather than platform floating-point
+  fallback. Portfolio construction, implementation, conformance vectors, and
+  snapshot integration remain pending.
 - Require an approved identity-proofing result plus a fresh account-key
   challenge for every account being associated. Treat HSM or hardware
   attestation as optional supplementary evidence, not an ordinary-player

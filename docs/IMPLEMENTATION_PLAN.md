@@ -163,6 +163,14 @@ Game Vault balance, large integers, and conservation of the base pool. Clipped
 amounts remain in the Game Vault unless a separate redistribution rule is
 confirmed.
 
+The pure allocator consumes canonical integer weights only. The separate
+`reward-weight-v1` proposal specifies exact rational formula inputs, a proposed
+`10^12` scale, floor rounding, complete-operation interval bounds, exact-boundary
+proofs, and explicit input/resource limits. All parameters remain pending
+approval. Converter implementation, Portfolio rational construction, nonzero
+conformance vectors, and snapshot integration remain pending; platform
+`Math.pow` and `Math.log` results are not authoritative weights.
+
 ### Participant-review service requirements
 
 The later application service must enforce all of the following regardless of
