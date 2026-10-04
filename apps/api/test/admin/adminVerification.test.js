@@ -2,7 +2,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildAdminVerificationChecklist, validateResolveAppealInput } = require('./adminVerification');
+const {
+  buildAdminVerificationChecklist,
+  validateResolveAppealInput
+} = require('../../src/admin/adminVerification');
 
 function validInput(overrides = {}) {
   return {

@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
-const { createAdminRouter } = require('./adminRouter');
+const { createAdminRouter } = require('../../src/admin/adminRouter');
 
 function validBody(overrides = {}) {
   return {
