@@ -104,9 +104,16 @@ confirmed project requirements:
 - Pet contributions remain deferred. Under the current confirmed rule, every
   undistributed allocation, including a cap-clipped amount, remains in the Game
   Vault and is not redistributed.
-- Participant verification, unassociated-account eligibility, and primary-
-  account switching remain unresolved. Device or IP similarity alone must not
-  establish a confirmed association.
+- Unassociated accounts may play and progress but receive no weekly rewards,
+  fallback-pool allocation, or retroactive allocation. Each confirmed
+  participant explicitly designates one primary account. Accounts retain their
+  own XP and Tower progression, and a newly designated primary must independently
+  complete Tower Level 3. An approved switch activates at the next weekly
+  boundary and is limited to once per four weekly periods, except for separately
+  authorized and audited recovery exceptions. Verification evidence and approval
+  criteria, the switch approval procedure, recovery-exception criteria, and the
+  exact calendar boundary remain unresolved; Sunday 00:00 UTC is proposed.
+  Device or IP similarity alone must not establish a confirmed association.
 
 ### Proposed wallet binding
 
@@ -129,9 +136,10 @@ The supplied PostgreSQL view and JavaScript payout snippet are implementation
 proposals only. Neither has been executed, added to a migration, or integrated
 into the runtime. No payout implementation exists in this repository.
 
-The proposed `SUSPECT_UNASSOCIATED_POOL` is not adopted. Unassociated-account
-eligibility remains unresolved, so unassociated accounts must not be forced
-into a shared reward identity or cap group by implementation assumption.
+The proposed `SUSPECT_UNASSOCIATED_POOL` is not adopted. Unassociated accounts
+may play and progress but receive no weekly rewards, fallback-pool allocation,
+or retroactive allocation. They must not be forced into a shared reward identity
+or cap group.
 
 A live aggregation view is not an authoritative weekly distribution record.
 The next revision must consume a validated, immutable weekly snapshot that
@@ -257,8 +265,8 @@ following sequence:
 Any failure rolls back the status, version, audit event, and new idempotency
 record together. An overturned review does not grant reward eligibility or
 automatically revoke an existing confirmed participant association. Association
-corrections require a separate authorized and audited process. Unassociated-
-account reward eligibility remains unresolved, and this workflow introduces no
+corrections require a separate authorized and audited process. Unassociated
+accounts remain excluded from weekly rewards, and this workflow introduces no
 payout or snapshot endpoint.
 
 #### Proposed Express handler review
@@ -362,9 +370,11 @@ in place:
    caps, upgrade costs, and the handling of disabled or unknown buildings.
 8. A server-authoritative time policy using PostgreSQL `TIMESTAMPTZ` values and
    a controllable clock for tests.
-9. Before weekly rewards, approved participant-verification, unassociated-
-   account eligibility, and primary-account designation/switching procedures.
-   Wallet binding and device/IP similarity alone cannot establish association.
+9. Before weekly rewards, approved verification evidence and approval criteria,
+   a primary-account switch approval procedure, audited recovery-exception
+   criteria, and an exact weekly calendar boundary. Sunday 00:00 UTC remains a
+   proposal. Wallet binding and device/IP similarity alone cannot establish
+   association.
 
 ## Proposed schema requirements
 

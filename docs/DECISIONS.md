@@ -18,11 +18,11 @@ community-first demo described in the [README](../README.md).
 | Level 3 equipment and cost boundary | Require Tier I-or-higher gear equipped in all six main-avatar slots: Weapon, Armor, Helmet, Boots, Ring, and Amulet. | Inventory ownership alone does not qualify, and equipment is not consumed. Only specified `$DONCELLA` and material costs may be consumed. Failed prerequisites leave Tower level and balances unchanged. |
 | Reward weight | Use `KL^2.75 × [1 + 0.23 × ln(1 + Portfolio/10)]`. | Portfolio inputs and timing rules remain partly open. |
 | Payout cap | Cap a confirmed participant's combined allocation at 5% of the available weekly pool. | Under the current confirmed rule, every undistributed allocation, including a cap-clipped amount, stays in the Game Vault and is not redistributed. No payout implementation exists. |
-| Reward identity | Use one designated primary progression account per confirmed participant for the Kingdom Level multiplier; that account must complete Tower Level 3. | Secondary accounts add no Kingdom Level multiplier. Do not automatically select the highest-level account. Participant verification, unassociated-account eligibility, and primary-account switching remain unresolved. Device/IP similarity alone cannot confirm association. |
+| Reward identity | Each confirmed participant explicitly designates one primary progression account for the Kingdom Level multiplier; that account must independently complete Tower Level 3. Accounts retain their own XP and Tower progression. | Secondary accounts add no Kingdom Level multiplier, and the system must not automatically select the highest-level account. Unassociated accounts may play and progress but receive no weekly rewards, fallback-pool allocation, or retroactive allocation. An approved primary-account switch activates at the next weekly boundary and is limited to once per four weekly periods, except for separately authorized and audited recovery exceptions. The exact boundary remains unresolved; Sunday 00:00 UTC is proposed. |
 | Participant aggregation | Aggregate eligible time-weighted mining-plot scores once across associated holdings and apply the 5% weekly payout cap to the participant's combined allocation. | Duplicate attribution is prohibited. Pet contributions remain deferred, and undistributed tokens remain in the Game Vault. |
 | Participant case authority | Only authorized reviewers may approve or overturn participant-review cases, and reviewers may not decide cases involving their own accounts. Players may appeal cases involving their own accounts. | Appeals request reconsideration and preserve the original decision. `approved` means the original decision was upheld; `overturned` means the appeal succeeded. Approval requires reviewed evidence and a reason; device/IP similarity alone is insufficient. |
 | Participant case integrity | Change case status and append its history event atomically while holding a lock on the case row. Create confirmed participant associations through a separate audited operation. | The application role may insert history events but may not update or delete them. |
-| Appeal resolution boundary | `POST /api/admin/review-cases/:caseId/resolve-appeal` resolves reconsideration of a review case and requires an `Idempotency-Key`. | An overturned review neither grants reward eligibility nor automatically revokes an existing participant association. Corrections use a separate audited process. It must not create reward groups, snapshots, or payouts; unassociated eligibility remains unresolved. |
+| Appeal resolution boundary | `POST /api/admin/review-cases/:caseId/resolve-appeal` resolves reconsideration of a review case and requires an `Idempotency-Key`. | An overturned review neither grants reward eligibility nor automatically revokes an existing participant association. Corrections use a separate audited process. It must not create reward groups, snapshots, or payouts; unassociated accounts remain excluded from weekly rewards. |
 | Plot maturity | A fueled, active mining plot reaches full operational score after 96 active hours. | The accumulation curve is unresolved. |
 | Ownership boundary | Keep `$MARGEN` ownership-related in the broader vision without assigning unresolved legal rights. | Internal balances and digital land confer no shares, income entitlement, redemption, or real-property rights. |
 | Utility asset | Use `$DONCELLA` as the proposed utility asset earned through tasks, battles, and trade. | “Proposed” describes its role; implementation and detailed utility rules remain future work. |
@@ -81,13 +81,11 @@ community-first demo described in the [README](../README.md).
 - Time and method of the weekly scoring snapshot
 - Scoring rules or separate budgets for pet expeditions, guild raids, and
   leaderboard contributions
-- How participant identity and account associations are verified; wallet
-  binding and device/IP similarity alone are insufficient
-- Whether and how an unassociated account can qualify for weekly rewards
-- No shared unassociated-account pool is adopted; eligibility must be decided
-  without assuming `SUSPECT_UNASSOCIATED_POOL` or an equivalent catch-all group
-- How a confirmed participant designates or switches the primary progression
-  account, including timing and anti-abuse constraints
+- Verification evidence and approval criteria; wallet binding and device/IP
+  similarity alone are insufficient
+- The exact weekly calendar boundary; Sunday 00:00 UTC is proposed
+- The primary-account switch approval procedure
+- Criteria and authorization for audited recovery exceptions
 - Exact duplicate-attribution controls for mining assets linked through wallets
   or accounts
 

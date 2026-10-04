@@ -61,11 +61,17 @@ holdings under the established activity rules. The 5% weekly payout cap applies
 to the participant's combined allocation. Pet contributions remain deferred,
 and any undistributed `$MARGEN` remains in the Game Vault.
 
-Participant verification, unassociated-account eligibility, and rules for
-switching the designated primary account remain unresolved. Device or IP
-similarity alone is insufficient to establish a confirmed association.
-Unassociated accounts are not automatically combined into a shared eligibility
-or cap pool.
+Unassociated accounts may play and retain account-specific progression but
+receive no weekly rewards, fallback-pool allocation, or retroactive allocation.
+Each confirmed participant explicitly designates the primary account. Accounts
+retain their own XP and Tower progression, and a newly designated primary must
+independently complete Tower Level 3. An approved switch activates at the next
+weekly boundary and is limited to once per four weekly periods, except for
+separately authorized and audited recovery exceptions. Verification evidence
+and approval criteria, the switch approval procedure, recovery-exception
+criteria, and the exact calendar boundary remain unresolved; Sunday 00:00 UTC
+is proposed. Device or IP similarity alone is insufficient to establish a
+confirmed association.
 
 Participant-review cases require authorized reviewers for approvals or
 reversals. A player may appeal a case involving that player's own account, but
