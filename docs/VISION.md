@@ -150,6 +150,14 @@ criteria, and the exact calendar boundary remain unresolved; Sunday 00:00 UTC
 is proposed. Device or IP similarity alone must not establish a confirmed
 association. No payout implementation exists.
 
+The later participant-review service must restrict case approval and reversal
+to authorized reviewers while allowing players to appeal cases involving their
+own accounts. Approval requires reviewed evidence and a recorded reason; device
+or IP similarity alone is never sufficient. Appeals request reconsideration and
+preserve the original decision. Confirmed participant associations are created
+through a separate audited operation, and case-history events are immutable to
+the application role.
+
 ## Open proposals
 
 The authenticated Web2 account is proposed as the primary game identity. Wallet

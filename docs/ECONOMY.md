@@ -73,6 +73,13 @@ criteria, and the exact calendar boundary remain unresolved; Sunday 00:00 UTC
 is proposed. Device or IP similarity alone is insufficient to establish a
 confirmed association.
 
+Participant-review cases require authorized reviewers for approvals or
+reversals. A player may appeal a case involving that player's own account, but
+an appeal is a reconsideration request and does not replace the original
+decision. Approval requires reviewed evidence and a reason. Confirmed
+associations are created separately through an audited operation; case-history
+events remain immutable to the application role.
+
 ### Proposed wallet binding
 
 The authenticated Web2 account is proposed as the primary game identity, with
