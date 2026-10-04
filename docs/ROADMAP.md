@@ -42,6 +42,8 @@ claims.
 - Persistent PostgreSQL repositories for community data
 - Authentication, role-based authorization, and account recovery
 - Moderation tools and an audit trail
+- Participant-review cases with reviewer-only decisions, account-owner appeals,
+  immutable history, and separately audited association creation
 - Maintenance requests, vendors, and completion tracking
 - Notifications and an event calendar
 - Member and community engagement analytics
@@ -104,6 +106,11 @@ switching remain unresolved. Device or IP similarity alone cannot confirm an
 association. Wallet binding likewise does not prove that accounts belong to
 different people. No shared unassociated-account pool is adopted, unassociated
 eligibility remains unresolved, and no payout implementation exists.
+
+The later review workflow must lock a case while atomically changing its status
+and appending history. Approval requires reviewed evidence and a reason; device
+or IP similarity alone is insufficient. Appeals preserve the original decision,
+and the application role cannot update or delete history events.
 
 Commercial proposals—including BTC chapter payments, a supporter bundle,
 browser-native crypto purchases, internal burn-velocity pricing, and a Beta
