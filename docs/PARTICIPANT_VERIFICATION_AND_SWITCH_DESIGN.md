@@ -33,8 +33,9 @@ The proposal must be evaluated without weakening these adopted rules.
   equipment, or other progression state.
 - A newly designated primary account must independently complete Kingdom Tower
   Level 3. Another account's completion cannot satisfy that requirement.
-- A participant may change the designated primary account no more than once in
-  a four-week period.
+- A participant may change the designated primary account no more than once per
+  four weekly periods, except through a separately authorized and audited
+  recovery exception.
 - An approved switch activates at the next weekly boundary; it does not rewrite
   an already-started or completed reward period.
 - An account that is not associated with a confirmed participant is excluded
