@@ -17,9 +17,10 @@ community-first demo described in the [README](../README.md).
 | Level 3 Character XP gate | Require at least 4,500 lifetime Character XP, the authoritative account-level Tower progression counter. Qualifying sources are Training Grounds, Arena Stage Victories, Bounty Board tasks, and completed Idle Expeditions/Adventures. | Construction/building XP and community points are excluded. An upgrade never deducts, burns, reserves, or resets XP; the full total remains available for future progression. Adventure eligibility does not determine implementation timing, and future Tower thresholds are undefined. |
 | Level 3 equipment and cost boundary | Require Tier I-or-higher gear equipped in all six main-avatar slots: Weapon, Armor, Helmet, Boots, Ring, and Amulet. | Inventory ownership alone does not qualify, and equipment is not consumed. Only specified `$DONCELLA` and material costs may be consumed. Failed prerequisites leave Tower level and balances unchanged. |
 | Reward weight | Use `KL^2.75 × [1 + 0.23 × ln(1 + Portfolio/10)]`. | Portfolio inputs and timing rules remain partly open. |
-| Payout cap | Cap a confirmed participant's combined allocation at 5% of the available weekly pool. | Under the current confirmed rule, every undistributed allocation, including a cap-clipped amount, stays in the Game Vault and is not redistributed. No payout implementation exists. |
-| Reward identity | Each confirmed participant explicitly designates one primary progression account for the Kingdom Level multiplier; that account must independently complete Tower Level 3. Accounts retain their own XP and Tower progression. | Secondary accounts add no Kingdom Level multiplier, and the system must not automatically select the highest-level account. Unassociated accounts may play and progress but receive no weekly rewards, fallback-pool allocation, or retroactive allocation. An approved primary-account switch activates at the next weekly boundary and is limited to once per four weekly periods, except for separately authorized and audited recovery exceptions. The exact boundary remains unresolved; Sunday 00:00 UTC is proposed. |
+| Payout cap | Cap a confirmed participant's combined allocation at 5% of the available weekly pool. | Under the current confirmed rule, every undistributed allocation, including a cap-clipped amount, stays in the Game Vault and is not redistributed. A pure calculator exists; snapshot persistence and payout integration do not. |
+| Reward identity | Each confirmed participant explicitly designates one primary progression account for the Kingdom Level multiplier; that account must independently complete Tower Level 3. Accounts retain their own XP and Tower progression. | Secondary accounts add no Kingdom Level multiplier, and the system must not automatically select the highest-level account. Unassociated accounts may play and progress but receive no weekly rewards, fallback-pool allocation, or retroactive allocation. An approved primary-account switch activates at the next weekly boundary and is limited to once per four weekly periods, except for separately authorized and audited recovery exceptions. |
 | Participant aggregation | Aggregate eligible time-weighted mining-plot scores once across associated holdings and apply the 5% weekly payout cap to the participant's combined allocation. | Duplicate attribution is prohibited. Pet contributions remain deferred, and undistributed tokens remain in the Game Vault. |
+| Weekly reward calendar | Use periods from Sunday 00:00 UTC inclusive to the following Sunday 00:00 UTC exclusive. | Every period lasts exactly seven days, boundaries align in UTC, and periods may not overlap. Active status is calculated at query time. |
 | Participant case authority | Only authorized reviewers may approve or overturn participant-review cases, and reviewers may not decide cases involving their own accounts. Players may appeal cases involving their own accounts. | Appeals request reconsideration and preserve the original decision. `approved` means the original decision was upheld; `overturned` means the appeal succeeded. Approval requires reviewed evidence and a reason; device/IP similarity alone is insufficient. |
 | Participant case integrity | Change case status and append its history event atomically while holding a lock on the case row. Create confirmed participant associations through a separate audited operation. | The application role may insert history events but may not update or delete them. |
 | Appeal resolution boundary | `POST /api/admin/review-cases/:caseId/resolve-appeal` resolves reconsideration of a review case and requires an `Idempotency-Key`. | An overturned review neither grants reward eligibility nor automatically revokes an existing participant association. Corrections use a separate audited process. It must not create reward groups, snapshots, or payouts; unassociated accounts remain excluded from weekly rewards. |
@@ -34,6 +35,14 @@ community-first demo described in the [README](../README.md).
 
 ## Proposals under consideration
 
+- Require an approved identity-proofing result plus a fresh account-key
+  challenge for every account being associated. Treat HSM or hardware
+  attestation as optional supplementary evidence, not an ordinary-player
+  requirement.
+- Require two distinct authorized reviewers, immutable decision records,
+  conflict checks, service-side permission revalidation, and separately
+  authorized individual recovery exceptions. The detailed procedure in
+  `PARTICIPANT_VERIFICATION_AND_RECOVERY_POLICY.md` remains proposed.
 - Use the authenticated Web2 account as the primary game identity. Keep wallet
   linking optional, allow multiple proof-of-control wallet links per account,
   and permit each supported wallet identity to link to only one account.
@@ -81,11 +90,11 @@ community-first demo described in the [README](../README.md).
 - Time and method of the weekly scoring snapshot
 - Scoring rules or separate budgets for pet expeditions, guild raids, and
   leaderboard contributions
-- Verification evidence and approval criteria; wallet binding and device/IP
-  similarity alone are insufficient
-- The exact weekly calendar boundary; Sunday 00:00 UTC is proposed
-- The primary-account switch approval procedure
-- Criteria and authorization for audited recovery exceptions
+- Verification evidence and approval criteria
+- Reviewer authority and primary-account switch approval procedure
+- Criteria and authority for individual recovery exceptions
+- Approved identity-proofing provider selection and assurance profile
+- Restricted-evidence retention, access-review, and deletion requirements
 - Exact duplicate-attribution controls for mining assets linked through wallets
   or accounts
 

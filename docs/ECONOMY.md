@@ -68,10 +68,12 @@ retain their own XP and Tower progression, and a newly designated primary must
 independently complete Tower Level 3. An approved switch activates at the next
 weekly boundary and is limited to once per four weekly periods, except for
 separately authorized and audited recovery exceptions. Verification evidence
-and approval criteria, the switch approval procedure, recovery-exception
-criteria, and the exact calendar boundary remain unresolved; Sunday 00:00 UTC
-is proposed. Device or IP similarity alone is insufficient to establish a
-confirmed association.
+and recovery procedures remain proposed and require explicit approval. Weekly
+periods run from Sunday 00:00 UTC inclusive to the following Sunday 00:00 UTC
+exclusive. Evidence and approval criteria, reviewer authority, recovery
+criteria, identity-provider selection, assurance profiles, and restricted-
+evidence retention remain unresolved. Device or IP similarity alone is
+insufficient to establish a confirmed association.
 
 Participant-review cases require authorized reviewers for approvals or
 reversals. A player may appeal a case involving that player's own account, but
@@ -151,7 +153,9 @@ Pet expeditions, guild raids, and leaderboard contributions are future
 upgrades. They cannot affect payouts until they have explicit scoring rules or
 separate reward budgets.
 
-No payout implementation currently exists.
+A pure payout calculator now implements the integer allocation and retention
+rules. Snapshot persistence, payout storage, scheduled execution, and an API do
+not exist.
 
 ## Supply reduction and locked balances
 

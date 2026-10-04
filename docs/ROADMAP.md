@@ -107,11 +107,14 @@ explicitly designates one primary account. Accounts retain their own XP and
 Tower progression, and a newly designated primary must independently complete
 Tower Level 3. An approved switch activates at the next weekly boundary and is
 limited to once per four weekly periods, except for separately authorized and
-audited recovery exceptions. Verification evidence and approval criteria, the
-switch approval procedure, recovery-exception criteria, and the exact calendar
-boundary remain unresolved; Sunday 00:00 UTC is proposed. Device or IP
+audited recovery exceptions. Verification evidence, the switch approval
+procedure, and recovery-exception criteria remain proposed and require explicit
+approval. Weekly periods run from Sunday 00:00 UTC inclusive to the following
+Sunday 00:00 UTC exclusive. Identity-provider selection, assurance profiles,
+and restricted-evidence retention also remain unresolved. Device or IP
 similarity alone cannot confirm an association, and wallet binding does not
-prove that accounts belong to different people. No payout implementation exists.
+prove that accounts belong to different people. A pure payout calculator exists;
+snapshot persistence, payout storage, scheduled execution, and an API do not.
 
 The later review workflow must lock a case while atomically changing its status
 and appending history. Approval requires reviewed evidence and a reason; device

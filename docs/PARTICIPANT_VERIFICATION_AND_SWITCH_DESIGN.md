@@ -38,6 +38,8 @@ The proposal must be evaluated without weakening these adopted rules.
   recovery exception.
 - An approved switch activates at the next weekly boundary; it does not rewrite
   an already-started or completed reward period.
+- Weekly periods begin Sunday at 00:00 UTC inclusive and end the following
+  Sunday at 00:00 UTC exclusive.
 - An account that is not associated with a confirmed participant is excluded
   from weekly rewards. It must not be assigned to a shared fallback pool or
   treated as eligible by implementation assumption.
@@ -137,7 +139,7 @@ participant-affecting decision.
 
 ### Weekly calendar
 
-Use a weekly period beginning Sunday at `00:00:00 UTC` inclusive and ending the
+The adopted weekly period begins Sunday at `00:00:00 UTC` inclusive and ends the
 following Sunday at `00:00:00 UTC` exclusive. Proposed persistence constraints
 should ensure:
 
@@ -243,9 +245,6 @@ compliance approval before implementation:
 - supported reason codes and the evidence threshold for each decision;
 - reviewer permission model, assignment rules, conflict-of-interest checks,
   escalation path, and service-level monitoring;
-- the canonical time source and operational owner of weekly period creation;
-- precise cooldown calculation around an approved, cancelled, failed, recovered,
-  or rolled-back switch;
-- recovery-authority roles and which exceptional states are recoverable; and
+- operational ownership and monitoring for weekly period creation;
 - final schema, constraints, isolation level, retry classification, audit-event
   retention, and deployment/rollback procedure.

@@ -54,8 +54,9 @@ test('checklist uses appeal meanings and forbids adjacent mutations', () => {
   assert.ok(checklist.checks.some((item) => item.includes('reward groups')));
   assert.deepEqual(checklist.unresolvedPolicy, [
     'verification evidence and approval criteria',
-    'exact weekly calendar boundary; Sunday 00:00 UTC is proposed',
-    'primary-account switch approval procedure',
-    'criteria and authorization for audited recovery exceptions'
+    'reviewer authority and primary-account switch approval procedure',
+    'criteria and authority for individual recovery exceptions',
+    'approved identity-proofing provider selection and assurance profile',
+    'restricted-evidence retention, access-review, and deletion requirements'
   ]);
 });
