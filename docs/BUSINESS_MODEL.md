@@ -146,8 +146,8 @@ The following points require reconciliation before adoption:
   paid Season 1 chapter. Those references require reconciliation with the
   confirmed full-bundle rule and do not authorize checkout or access logic.
 - Existing documents use Kingdom Tower Level 3 as a proposed reward-eligibility
-  gate. This document proposes KTL 1–9 chapter unlocks, which must not be
-  treated as adopted or allowed to alter reward eligibility.
+  gate. This document records the confirmed business-design decision for KTL
+  1–9 chapter unlocks, which must not alter reward eligibility.
 - Existing Community and architecture documents prohibit payment processing,
   custody, securities, legal title, and NFT/blockchain runtime behavior in the
   current MVP. Those boundaries remain unchanged.
