@@ -86,16 +86,22 @@ Land preservation and eco-friendly modernization are intended to guide the
 business. These are strategic principles, not property-specific commitments,
 environmental certifications, investment promises, or guaranteed outcomes.
 
-## 6. Proposed surplus allocation
+## 6. Confirmed surplus-allocation basis and split
 
-A proposed future allocation may reserve 70% of surplus for a defined purpose,
-but the basis and recipient of that proposed 70% are unresolved. The remaining
-30% is also unresolved, including its recipient, permitted uses, timing, and
-whether the split applies to gross revenue, net revenue, operating surplus,
-or another accounting measure.
+The confirmed business-design basis for any future surplus allocation is
+available net surplus after expenses, applicable taxes, and required reserves.
+The allocation must not be calculated from gross revenue.
 
-No surplus-allocation percentage is adopted. No holder, player, purchaser,
-member, token owner, or participant receives a claim from this proposal.
+After that basis is calculated, the confirmed allocation is:
+
+- 70% for property acquisitions; and
+- 30% for book/RPG development and owner distributions.
+
+Reserve targets, reserve categories, and release conditions remain unresolved.
+This allocation is a business-design decision only: it is not an ownership
+right, revenue entitlement, dividend, token allocation, or payment promise. No
+holder, player, purchaser, member, token owner, or participant receives a
+claim from this document.
 
 ## 7. Future digital ownership and voting proposals
 
@@ -115,8 +121,7 @@ The following decisions must remain open:
 
 - purchase price for the confirmed full book/RPG bundle;
 - commercial delivery terms for the full book/RPG bundle;
-- the accounting basis and purpose of any proposed 70% surplus allocation;
-- the purpose, recipient, and permitted uses of the remaining 30%;
+- required reserve categories, reserve targets, and release conditions;
 - launch costs, funding sources, operating runway, and production budget;
 - exact Kingdom Tower completion requirements for Chapters 4–12;
 - whether access can be transferred, revoked, suspended, or shared;
