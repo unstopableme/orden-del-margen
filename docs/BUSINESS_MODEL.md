@@ -92,16 +92,22 @@ The confirmed business-design basis for any future surplus allocation is
 available net surplus after expenses, applicable taxes, and required reserves.
 The allocation must not be calculated from gross revenue.
 
-After that basis is calculated, the confirmed allocation is:
+After that basis is calculated, the confirmed allocation of total available net
+surplus is:
 
 - 70% for property acquisitions; and
-- 30% for book/RPG development and owner distributions.
+- 5% for book/RPG development; and
+- 25% for owner distributions.
 
-Reserve targets, reserve categories, and release conditions remain unresolved.
-This allocation is a business-design decision only: it is not an ownership
-right, revenue entitlement, dividend, token allocation, or payment promise. No
-holder, player, purchaser, member, token owner, or participant receives a
-claim from this document.
+For example, if total available net surplus is $100 after expenses, applicable
+taxes, and required reserves, $70 is allocated to property acquisitions, $5 to
+book/RPG development, and $25 to owner distributions.
+
+Reserve targets, reserve categories, and distribution-release conditions remain
+unresolved. This allocation is a business-design decision only: it is not an
+ownership right, revenue entitlement, dividend, token allocation, or payment
+promise. No holder, player, purchaser, member, token owner, or participant
+receives a claim from this document.
 
 ## 7. Future digital ownership and voting proposals
 
@@ -121,7 +127,8 @@ The following decisions must remain open:
 
 - purchase price for the confirmed full book/RPG bundle;
 - commercial delivery terms for the full book/RPG bundle;
-- required reserve categories, reserve targets, and release conditions;
+- required reserve categories and reserve targets;
+- distribution-release conditions;
 - launch costs, funding sources, operating runway, and production budget;
 - exact Kingdom Tower completion requirements for Chapters 4–12;
 - whether access can be transferred, revoked, suspended, or shared;
