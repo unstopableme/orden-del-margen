@@ -170,6 +170,51 @@ and do not settle the unresolved decisions above:
 - verified-email account recovery, subject to identity assurance, email-change,
   session-revocation, abuse-prevention, privacy, and support-policy review.
 
+### Recommended payment-exception policies
+
+Payment detection alone must not grant access. A future BTCPay-integrated
+service should distinguish at least these cases:
+
+| Situation | Recommended policy |
+| --- | --- |
+| Underpayment | Hold access. Before expiry, allow payment of the remaining invoiced amount. After expiry, reconcile funds already received before issuing another payment request. |
+| Overpayment | After settlement and review, fulfill the bundle once. Record the excess separately and offer a reviewed return, not additional game advantages. |
+| Late payment | Hold for review. If the settled payment covers the original invoice amount and the order remains valid, honor the original quote without repricing. |
+| Expired, unpaid invoice | Grant nothing. Offer a new invoice at the current quote; expiry creates no debt. |
+| Duplicate payment | Grant the bundle once and review the extra payment as excess funds. |
+| Unknown payment outcome | Check authoritative invoice and fulfillment records before asking the customer to pay again. |
+
+For returned excess funds, claimant and destination verification is required;
+BTC must not be sent automatically to the transaction's sending address.
+Network-fee handling should be disclosed before approval. Unresolved customer
+funds remain outside distributable surplus until reconciled.
+
+### Recommended lost-email recovery policies
+
+Previously registered recovery methods should be tried first. A future recovery
+service should not bypass stronger authentication and may accept:
+
+- an unused recovery code, an existing registered passkey, or a fresh challenge
+  signed by a previously linked account key; private keys must never be
+  requested;
+- order records, purchase correspondence, and account history only as
+  supporting evidence, not proof of ownership by themselves; and
+- no public transaction ID, screenshot, username knowledge, or shared
+  IP/device signal as sufficient evidence alone.
+
+One authorized reviewer should evaluate the evidence and a second distinct
+reviewer should approve a manual email replacement; neither may review their
+own account. A disputed request suspends the recovery change and sensitive
+account changes, but does not automatically suspend ordinary gameplay. Existing
+registered contacts should be notified and independent review required.
+
+After successful recovery, verify the new email, invalidate old sessions and
+recovery tokens, notify registered contacts, and restore the same account and
+library. If evidence remains inadequate, leave ownership unchanged, explain
+what is missing, and permit an appeal. Government identification should not be
+collected routinely for ordinary book access, and a purchase receipt alone must
+not justify taking over an entire progression account.
+
 Neither recommendation authorizes a BTCPay deployment, wallet custody, payment
 route, email service, recovery workflow, or entitlement change.
 
