@@ -1,6 +1,6 @@
-# Content Delivery and Account Library Proposal
+# Content Delivery and Account Library Design
 
-**Status:** Documentation-only proposal; not adopted and not authorized for implementation
+**Status:** Delivery model adopted for design; implementation pending and not authorized
 **Scope:** EPUB/PDF bundle delivery, account library presentation, and browser-based game access
 **Related business rule:** A confirmed purchase grants content access only; it does not change Tower progression or reward eligibility.
 
@@ -17,14 +17,19 @@ Levels 1–9 unlock Chapters 4–12 respectively. Purchases grant content access
 only; every player still faces identical Tower progression and reward-eligibility
 requirements.
 
-## 2. Proposed delivery package
+## 2. Adopted delivery model
 
-For each chapter, the delivery package may contain:
+For each available chapter, the adopted delivery model includes:
 
 - an EPUB book file;
 - a PDF book file; and
 - a browser-game entry that opens the corresponding RPG chapter when that
   chapter is available to the account.
+
+The account library is the primary delivery surface. An email backup may be
+used to provide delivery notices and backup download links, subject to an
+approved account, privacy, and delivery policy. Email is a backup channel, not
+the authoritative access record.
 
 The library should identify the chapter, media type, version, language, and
 availability state without exposing storage paths or internal entitlement IDs.
@@ -35,9 +40,9 @@ The bundle should be presented as one content-access product even if files are
 delivered separately. A successful purchase should not be represented as a
 share, investment, property right, token allocation, or reward entitlement.
 
-## 3. Proposed account library
+## 3. Adopted authenticated account library
 
-An authenticated account may have a private **Library** view with:
+An authenticated account has a private **Library** view with:
 
 - available free chapters;
 - purchased chapters whose access has been confirmed by an authorized future
@@ -57,9 +62,9 @@ The library is an access presentation, not a reward ledger. It must not grant
 Tower levels, Character XP, weekly `$MARGEN` distributions, participant status,
 primary-account designation, or any other progression state.
 
-## 4. Browser-based game access
+## 4. Adopted browser RPG access
 
-The proposed **Play in browser** action opens the RPG chapter in the web game
+The adopted **Play in browser** action opens the RPG chapter in the web game
 after the server checks the authenticated account's current content access. The
 browser may receive a short-lived launch token or route reference rather than a
 permanent entitlement identifier. The game server must repeat authorization at
@@ -141,11 +146,13 @@ The following remain unresolved:
   lifetime; and
 - support staffing, service-level targets, and replacement/refund authority.
 
-## 8. Implementation boundary
+## 8. Pending infrastructure and implementation boundary
 
-This proposal authorizes no runtime code, database schema, payment route,
-wallet custody, file-storage integration, account service, entitlement ledger,
-download endpoint, browser-game route, or automated refund behavior. Any future
-implementation must first reconcile this proposal with the confirmed business
-model, the authenticated-account design, applicable legal and tax review, and
-the project's MVP exclusions.
+Payment settlement, account recovery, file hosting, and all implementation
+details remain pending. This document authorizes no runtime code, database
+schema, payment route, wallet custody, file-storage integration, account
+service, entitlement ledger, download endpoint, browser-game route, email
+delivery service, or automated refund behavior. Any future implementation must
+first reconcile this adopted delivery model with the confirmed business model,
+the authenticated-account design, applicable legal and tax review, and the
+project's MVP exclusions.
