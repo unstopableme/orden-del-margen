@@ -88,9 +88,14 @@ environmental certifications, investment promises, or guaranteed outcomes.
 
 ## 6. Confirmed surplus-allocation basis and split
 
-The confirmed business-design basis for any future surplus allocation is
-available net surplus after expenses, applicable taxes, and required reserves.
-The allocation must not be calculated from gross revenue.
+The confirmed reserve target for any future surplus allocation is three months
+of essential operating costs plus known unpaid obligations. Obligations that
+have already been paid or deducted from available cash must not be deducted a
+second time.
+
+Available net surplus is the amount remaining after expenses, applicable taxes,
+and funding that reserve target. The allocation must not be calculated from
+gross revenue; only surplus above the funded reserve target enters the split.
 
 After that basis is calculated, the confirmed allocation of total available net
 surplus is:
@@ -103,11 +108,16 @@ For example, if total available net surplus is $100 after expenses, applicable
 taxes, and required reserves, $70 is allocated to property acquisitions, $5 to
 book/RPG development, and $25 to owner distributions.
 
-Reserve targets, reserve categories, and distribution-release conditions remain
-unresolved. This allocation is a business-design decision only: it is not an
-ownership right, revenue entitlement, dividend, token allocation, or payment
-promise. No holder, player, purchaser, member, token owner, or participant
-receives a claim from this document.
+The confirmed starting policy is to review owner distributions quarterly. A
+distribution may be paid only when accounts are reconciled, the reserve target
+is funded, and sufficient cash is available for upcoming obligations. Juan
+Verduzco's approval must be recorded before payment. If any condition fails,
+the unpaid owner allocation is held; the 70%/5%/25% split does not change.
+
+This allocation is a business-design decision only: it is not an ownership
+right, revenue entitlement, dividend, token allocation, or payment promise. No
+holder, player, purchaser, member, token owner, or participant receives a claim
+from this document.
 
 ## 7. Future digital ownership and voting proposals
 
@@ -127,8 +137,6 @@ The following decisions must remain open:
 
 - purchase price for the confirmed full book/RPG bundle;
 - commercial delivery terms for the full book/RPG bundle;
-- required reserve categories and reserve targets;
-- distribution-release conditions;
 - launch costs, funding sources, operating runway, and production budget;
 - exact Kingdom Tower completion requirements for Chapters 4–12;
 - whether access can be transferred, revoked, suspended, or shared;
