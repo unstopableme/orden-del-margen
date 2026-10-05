@@ -83,8 +83,10 @@ workflow remains separate.
 
 The eventual delivery service should distinguish these states:
 
-1. **Accepted:** the purchase/access record is durably recorded and the
-   library can be refreshed to obtain the files or launch the game.
+1. **Accepted:** the backend has confirmed settlement under the separately
+   approved payment policy, durably recorded the purchase/access record, and
+   can serve the library files or launch the game. A client receipt alone must
+   not grant access.
 2. **Processing:** payment or file preparation is not yet complete; the user
    may retry a status refresh without creating a second purchase.
 3. **Retryable failure:** a temporary storage, rendering, email, or network
@@ -98,6 +100,11 @@ The eventual delivery service should distinguish these states:
    show a stable support reference and must not claim that content access was
    granted.
 
+Payment exceptions—such as an unconfirmed, conflicting, reversed, or otherwise
+invalid settlement—must block access until an authorized backend decision is
+recorded. They require separate support or payment review and must not trigger
+duplicate fulfillment or an automatic grant.
+
 When a retry succeeds after a transient failure or unknown outcome, it returns
 the existing access grant if one was already committed. It must not create a
 duplicate grant or second fulfillment.
@@ -110,6 +117,8 @@ Recommended recovery order for a failed delivery is:
   EPUB/PDF download is temporarily unavailable;
 - route persistent failures to support using the support reference and the
   original submission identity; and
+- route lost-email access requests to a separate support review rather than
+  treating email possession alone as proof of account ownership; and
 - consider replacement delivery, account credit, or a refund only under a
   separately approved sales/refund policy.
 
@@ -121,12 +130,17 @@ available in the authenticated library.
 
 - Use least-privilege, expiring download links and do not expose object-store
   paths, credentials, account IDs, or payment details in the UI.
+- Recovery links must be expiring and single-use. They must be invalidated
+  after redemption, replacement, expiry, or account-security revocation.
 - Record access and delivery events with an auditable support reference, while
   minimizing personal data and download telemetry.
 - Provide keyboard-accessible controls, readable status text, captions or text
   alternatives for game media, and clear file-format labels.
 - Define account recovery and access-revocation behavior before treating the
   library as durable ownership of files.
+- A successful recovery restores access to the existing account only. It must
+  not create, merge, or change participant associations or the designated
+  primary account, and must not alter XP, Tower progression, or rewards.
 - Do not imply DRM, offline access, unlimited downloads, device limits, or
   perpetual access until those terms are separately decided.
 
@@ -146,7 +160,20 @@ The following remain unresolved:
   lifetime; and
 - support staffing, service-level targets, and replacement/refund authority.
 
-## 8. Pending infrastructure and implementation boundary
+## 8. Recommended future design choices (not adopted)
+
+The following options are recommended for separate review, but remain proposals
+and do not settle the unresolved decisions above:
+
+- BTC on-chain settlement through BTCPay Server, subject to payment
+  confirmation, custody, accounting, tax, compliance, and operational review;
+- verified-email account recovery, subject to identity assurance, email-change,
+  session-revocation, abuse-prevention, privacy, and support-policy review.
+
+Neither recommendation authorizes a BTCPay deployment, wallet custody, payment
+route, email service, recovery workflow, or entitlement change.
+
+## 9. Pending infrastructure and implementation boundary
 
 Payment settlement, account recovery, file hosting, and all implementation
 details remain pending. This document authorizes no runtime code, database
