@@ -62,6 +62,43 @@ The library is an access presentation, not a reward ledger. It must not grant
 Tower levels, Character XP, weekly `$MARGEN` distributions, participant status,
 primary-account designation, or any other progression state.
 
+### Account-library experience (design only)
+
+Each chapter appears as one library card with separate book-access and
+RPG-availability areas. The card shows the chapter number, title, access source,
+and current delivery state without exposing internal entitlement or storage
+identifiers. An unfinished RPG chapter must never be presented as playable just
+because its book is available.
+
+- **Free Chapters 1–3:** authenticated readers can open the book and use the
+  EPUB/PDF download actions without a purchase. If the corresponding RPG
+  chapter is available in the browser game, the card also shows **Play in
+  browser**.
+- **Purchased chapters:** after a future backend-confirmed access grant, the
+  card shows the EPUB download, PDF download, and corresponding **Play in
+  browser** action. A purchase grants content access only and does not bypass
+  Tower progression or reward requirements.
+- **Gameplay-unlocked chapters:** when the account satisfies the applicable
+  KTL unlock, the card shows the same book and RPG actions with an
+  **Unlocked by gameplay** label. The label is informational and does not
+  create a reward or participant entitlement.
+- **Locked:** the card identifies the unmet access path, such as a missing
+  purchase or required KTL level, and keeps unavailable actions disabled. It
+  must not imply that a payment can bypass a gameplay requirement.
+- **Purchase processing:** the card shows that the purchase/access decision is
+  pending, offers a status refresh, and does not create a second purchase or
+  fulfillment attempt. Free Chapters 1–3 and previously gameplay-unlocked
+  chapters remain accessible while a purchase is processing.
+- **Download failed:** the card shows a retryable failure state with a support
+  reference, offers an authenticated retry or regenerated link when allowed,
+  and may still show browser RPG access if that access grant is already valid.
+  A failed download does not remove book access and does not require another
+  payment.
+
+The same access state should be rendered consistently in the library and at
+the browser-game launch route. Settlement, account recovery, file hosting, and
+the authoritative entitlement service remain pending design decisions.
+
 ## 4. Adopted browser RPG access
 
 The adopted **Play in browser** action opens the RPG chapter in the web game
