@@ -1,17 +1,21 @@
 {
-  "name": "orden-del-magen-api",
+  "name": "orden-del-margen-api",
   "version": "1.0.0",
-  "description": "Starter backend for Orden del Magén",
+  "description": "Community API for Orden del Margen",
   "main": "server.js",
   "scripts": {
     "dev": "node --watch server.js",
     "start": "node server.js",
     "migrate": "node src/migrate.js",
-    "test": "node --test"
+    "seed:community-demo": "node src/seedCommunityDemo.js",
+    "test": "node --test",
+    "test:integration": "node --test test/integration/communityPostgres.test.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
+    "jwks-rsa": "^4.1.0",
     "pg": "^8.12.0"
   }
 }
