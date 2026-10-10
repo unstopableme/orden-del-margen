@@ -13,15 +13,50 @@
           <span class="brand-mark">OM</span>
           <span>Orden del Margen</span>
         </a>
-        <span class="environment">Community preview</span>
+        <div>
+          <span class="environment" id="auth-status">Signed out</span>
+          <button class="secondary" id="passport-login">Sign in with Immutable</button>
+          <button class="secondary" id="passport-logout" hidden>Logout</button>
+        </div>
       </header>
 
       <main id="app" aria-live="polite">
         <div class="loading">Loading your community dashboard...</div>
       </main>
     </div>
-    <script>
-      const apiUrl = 'http://localhost:3000/api/community/dashboard?memberId=member-1';
+    <script type="module">
+      const demoMode = import.meta.env.VITE_COMMUNITY_DEMO_MODE === 'true';
+      const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+      let communityFetch;
+      let passportInstance;
+
+      function authorizedHeaders(includeJson = false) {
+        const headers = {};
+        if (includeJson) headers['Content-Type'] = 'application/json';
+        return headers;
+      }
+
+      if (demoMode) {
+        communityFetch = (path, options = {}) => {
+          const headers = new Headers(options.headers);
+          headers.set('Authorization', 'Bearer demo-member-1-token');
+          return fetch(`${apiBaseUrl}${path}`, { ...options, headers });
+        };
+      } else {
+        const passport = await import('./src/passport.js');
+        communityFetch = passport.passportFetch;
+        passportInstance = passport.passportInstance;
+        await passport.completePassportRedirect();
+        document.querySelector('#passport-login').addEventListener('click', async () => {
+          await passport.signIn();
+          window.location.reload();
+        });
+        document.querySelector('#passport-logout').addEventListener('click', () => passport.signOut());
+      }
+
+      document.querySelector('#passport-login').hidden = demoMode;
+      document.querySelector('#passport-logout').hidden = demoMode;
+      document.querySelector('#auth-status').textContent = demoMode ? 'Demo mode' : 'Signed out';
 
       function escapeHtml(value) {
         return String(value)
@@ -136,9 +171,9 @@
         document.querySelector('#change-status').addEventListener('click', async () => {
           const status = window.prompt('What are you up to?', member.status);
           if (!status) return;
-          await fetch('http://localhost:3000/api/community/members/member-1/status', {
+          await communityFetch(`/api/community/members/${encodeURIComponent(member.id)}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authorizedHeaders(true),
             body: JSON.stringify({ status })
           });
           window.location.reload();
@@ -147,20 +182,20 @@
         document.querySelector('#invite-neighbor').addEventListener('click', async () => {
           const inviteeName = window.prompt('Who would you like to invite?');
           if (!inviteeName) return;
-          await fetch('http://localhost:3000/api/community/referrals', {
+          await communityFetch('/api/community/referrals', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ referrerId: 'member-1', inviteeName })
+            headers: authorizedHeaders(true),
+            body: JSON.stringify({ inviteeName })
           });
           window.location.reload();
         });
 
         document.querySelectorAll('.resolve-quest').forEach((button) => {
           button.addEventListener('click', async () => {
-            await fetch(`http://localhost:3000/api/community/quests/${button.dataset.questId}/resolve`, {
+            await communityFetch(`/api/community/quests/${button.dataset.questId}/resolve`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ memberId: 'member-1' })
+              headers: authorizedHeaders(true),
+              body: JSON.stringify({})
             });
             window.location.reload();
           });
@@ -169,11 +204,10 @@
         document.querySelector('#send-coffee').addEventListener('click', async () => {
           const message = window.prompt('What would you like to thank a neighbor for?');
           if (!message) return;
-          await fetch('http://localhost:3000/api/community/coffee-gifts', {
+          await communityFetch('/api/community/coffee-gifts', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authorizedHeaders(true),
             body: JSON.stringify({
-              senderId: 'member-1',
               recipientId: 'member-2',
               message
             })
@@ -182,15 +216,27 @@
         });
       }
 
-      fetch(apiUrl)
+      async function loadDashboard() {
+        const response = await communityFetch('/api/community/dashboard');
+        if (!response.ok) throw new Error('Unable to load dashboard');
+        return response.json();
+      }
+
+      if (!demoMode) {
+        const profile = await passportInstance.getUser().catch(() => null);
+        document.querySelector('#passport-login').hidden = Boolean(profile);
+        document.querySelector('#passport-logout').hidden = !profile;
+        document.querySelector('#auth-status').textContent = profile ? 'Passport authenticated' : 'Signed out';
+      }
+
+      loadDashboard()
         .then((response) => {
-          if (!response.ok) throw new Error('Unable to load dashboard');
-          return response.json();
+          return response;
         })
         .then(renderDashboard)
         .catch((error) => {
           document.querySelector('#app').innerHTML =
-            `<div class="error">${escapeHtml(error.message)}. Start the API on port 3000 and refresh.</div>`;
+            `<div class="error">${escapeHtml(error.message)}</div>`;
         });
     </script>
   </body>

@@ -1,0 +1,17 @@
+{
+  "name": "orden-del-margen-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 8000",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 8000"
+  },
+  "dependencies": {
+    "@imtbl/auth": "^2.24.9"
+  },
+  "devDependencies": {
+    "vite": "^7.1.9"
+  }
+}
