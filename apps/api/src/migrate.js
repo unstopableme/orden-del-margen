@@ -1,9 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 const pool = require('./db');
+const {
+  assertDatabaseOperationConfiguration,
+  verifyDatabaseTarget
+} = require('./databaseConfig');
 
-async function runMigrations() {
-  const client = await pool.connect();
+async function runMigrations(targetPool = pool) {
+  if (!targetPool) {
+    throw new Error('DATABASE_URL is required to run migrations');
+  }
+  const client = await targetPool.connect();
 
   try {
     await client.query(`
@@ -50,13 +57,22 @@ async function runMigrations() {
 }
 
 if (require.main === module) {
-  runMigrations()
+  let operation;
+  try {
+    operation = assertDatabaseOperationConfiguration(process.env, { allowProduction: true });
+  } catch (error) {
+    console.error('Migration refused:', error.message);
+    process.exitCode = 1;
+  }
+
+  if (operation) verifyDatabaseTarget(pool, operation.configuredName)
+    .then(() => runMigrations())
     .then(async () => {
       await pool.end();
     })
     .catch(async (error) => {
       console.error('Migration failed:', error.message);
-      await pool.end();
+      if (pool) await pool.end();
       process.exitCode = 1;
     });
 }
