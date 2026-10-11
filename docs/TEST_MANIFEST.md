@@ -10,6 +10,7 @@ This file is the authoritative inventory and execution boundary for automated te
 | Administrative route contract | `apps/api/test/admin/adminRouter.test.js` | READY | Express handler behavior with injected spies; no real authentication or database |
 | Administrative transaction fallback | `apps/api/test/admin/transactionFallback.test.js` | READY | Contract/fallback behavior only; not a PostgreSQL transaction test |
 | Idle-production arithmetic | `apps/api/test/gameplay/idleProduction.test.js` | READY | Pure deterministic calculator; no route, clock service, or database |
+| Idle collection planning | `apps/api/test/gameplay/idleCollection.test.js` | READY | Pure batch settlement, ownership consistency, asset aggregation, ledger reconciliation, carry restoration, and input preservation; no authentication, database, transaction, or route |
 | Weekly payout arithmetic | `apps/api/test/gameplay/weeklyPayout.test.js` | READY | Pure deterministic allocator; no snapshot, job, ledger, or database |
 | Community authentication and authorization | `apps/api/test/community/communityAuthorization.test.js` | READY | Route-level 401/403, ownership, membership, and no-mutation assertions |
 | Immutable Passport authentication | `apps/api/test/community/immutablePassportAuth.test.js` | READY | Offline RSA/JWKS verification, audience/expiry checks, server-owned identity mapping, and authenticated property-route behavior |

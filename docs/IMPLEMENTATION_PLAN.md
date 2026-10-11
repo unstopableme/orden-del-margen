@@ -1,5 +1,21 @@
 # Isolated gameplay prototype implementation plan
 
+## Gameplay completion milestone: collection planning
+
+Implemented `apps/api/src/gameplay/idleCollection.js` as a pure batch settlement
+planner, with direct unit tests. It validates building ownership, unique IDs,
+and supported activity; aggregates credits by asset; preserves fractional
+carry; and returns deterministic building updates and per-building ledger
+entries without mutating input. Existing prototype production rates remain
+provisional. This milestone is not a playable collection endpoint.
+
+Next: define the authenticated gameplay account and approved activity/rule
+model, then implement transaction-owned persistence, replay protection, and
+database verification before mounting collection routes or adding gameplay UI.
+The planner does not authenticate callers, lock rows, persist credits, or
+provide request idempotency. Its account key must come from a future trusted
+service, never directly from a request body.
+
 ## Proposal receipt status
 
 Both requested code proposals have now been received and reviewed: the unified
@@ -22,8 +38,9 @@ described below have been added; they do not expose routes or access a database.
 
 The supplied Express application and Tower PL/pgSQL function remain proposals
 only. Neither has been executed, installed as a migration, or added to the
-runtime. The implemented scope is limited to the dependency-free idle-production
-calculator and tests; it contains no submitted route or SQL code.
+runtime. The idle implementation is limited to the dependency-free production calculator,
+batch collection planner, and direct unit tests; it contains no submitted route
+or SQL code.
 
 ### Confirmed design requirements
 
@@ -683,12 +700,14 @@ The supplied material does not decide the following. They must remain open:
 
 ## Isolated prototype files
 
-The only implemented gameplay files are the pure calculator and its direct
-unit tests:
+The idle-production prototype files are the pure calculator, collection planner,
+and their direct unit tests:
 
 ```text
 apps/api/src/gameplay/idleProduction.js
+apps/api/src/gameplay/idleCollection.js
 apps/api/test/gameplay/idleProduction.test.js
+apps/api/test/gameplay/idleCollection.test.js
 ```
 
 No route, migration, model, job, or balance integration has been added. Once
