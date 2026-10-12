@@ -80,13 +80,20 @@ node --test test/gameplay.test.js
 20 passed, 0 failed, 0 skipped
 ```
 
-The guarded PostgreSQL integration command was invoked without a configured
-`GAMEPLAY_TEST_DATABASE_URL` and correctly skipped its single test. It was not
-redirected to the application development database. The existing integration
-test covers insufficient-balance rollback, successful settlement and debit,
-same-key replay, different-key concurrency, audit ledgers, and rollback on a
-forced ledger failure when run against the separately authorized disposable
-gameplay test database.
+The guarded PostgreSQL integration suite was subsequently run manually from a
+clean checkout of commit `a8384a8` against the separately authorized disposable
+`orden_margen_gameplay_test` database with its database-name, disposable-purpose,
+empty-`public`-schema, advisory-lock, and isolated-schema guards enabled. The
+result was:
+
+```text
+1 passed, 0 failed, 0 skipped
+```
+
+This integration test covers insufficient-balance rollback, successful
+settlement and debit, same-key replay, different-key concurrency, audit
+ledgers, and rollback on a forced ledger failure. It was not redirected to the
+application development database.
 
 ## Included implementation surface
 
