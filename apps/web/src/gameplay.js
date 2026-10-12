@@ -6,6 +6,8 @@ const BUILDINGS = [
   { type: 'textile_mill', name: 'Textile Mill', material: 'cloth', icon: '🧵' }
 ];
 
+const CARRY_DENOMINATOR = 3_600_000n;
+
 export class GameplayHttpError extends Error {
   constructor(status, code, message, retryAfter) {
     super(message);
@@ -210,6 +212,62 @@ function capLabel(storageLimitMs) {
   return `${Number.isInteger(minutes) ? minutes : hours.toFixed(1)}${Number.isInteger(minutes) ? 'm' : 'h'} storage cap`;
 }
 
+function formatDuration(milliseconds) {
+  if (!Number.isFinite(milliseconds) || milliseconds < 0) return 'Unavailable';
+  if (milliseconds === 0) return '0m';
+  const totalSeconds = Math.max(1, Math.ceil(milliseconds / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
+
+export function estimatePendingProduction({ building, rule, now = Date.now() } = {}) {
+  try {
+    if (!building || !rule || building.buildingType !== rule.buildingType ||
+        Number(building.level) !== Number(rule.level) ||
+        building.assetCode !== rule.assetCode || building.activity !== 'active' ||
+        !Number.isSafeInteger(rule.unitsPerHour) || rule.unitsPerHour <= 0 ||
+        !Number.isSafeInteger(rule.storageLimitMs) || rule.storageLimitMs < 0 ||
+        typeof building.carryNumerator !== 'string' || !/^\d+$/.test(building.carryNumerator)) {
+      return null;
+    }
+    const lastSettledAt = Date.parse(building.lastSettledAt);
+    const nowMilliseconds = now instanceof Date ? now.getTime() : now;
+    const carry = BigInt(building.carryNumerator);
+    if (!Number.isSafeInteger(lastSettledAt) || !Number.isSafeInteger(nowMilliseconds) ||
+        carry < 0n || carry >= CARRY_DENOMINATOR) {
+      return null;
+    }
+
+    const elapsedMilliseconds = Math.max(0, nowMilliseconds - lastSettledAt);
+    const activeMilliseconds = Math.min(elapsedMilliseconds, rule.storageLimitMs);
+    const remainingCapacityMs = rule.storageLimitMs - activeMilliseconds;
+    const rate = BigInt(rule.unitsPerHour);
+    const availableNumerator = carry + (BigInt(activeMilliseconds) * rate);
+    const pendingUnits = availableNumerator / CARRY_DENOMINATOR;
+    const estimatedCarry = availableNumerator % CARRY_DENOMINATOR;
+    const remainingCapacityUnits = (estimatedCarry + (BigInt(remainingCapacityMs) * rate)) /
+      CARRY_DENOMINATOR;
+    const numeratorUntilNext = CARRY_DENOMINATOR - estimatedCarry;
+    const millisecondsUntilNext = Number((numeratorUntilNext + rate - 1n) / rate);
+
+    return Object.freeze({
+      pendingUnits: pendingUnits.toString(),
+      remainingCapacityMs,
+      remainingCapacityUnits: remainingCapacityUnits.toString(),
+      millisecondsUntilNext: remainingCapacityMs >= millisecondsUntilNext
+        ? millisecondsUntilNext
+        : null,
+      storageFull: remainingCapacityMs === 0
+    });
+  } catch {
+    return null;
+  }
+}
+
 export function gameplayErrorMessage(error) {
   if (error?.status === 401) return 'Your Passport session expired. Sign in again to use gameplay.';
   if (error?.status === 403) {
@@ -236,14 +294,17 @@ export function gameplayErrorMessage(error) {
 export async function mountGameplay(root, {
   passportFetch,
   getSessionIdentity,
-  demoMode = false
+  demoMode = false,
+  now = () => Date.now(),
+  setIntervalFn = globalThis.setInterval,
+  clearIntervalFn = globalThis.clearInterval
 }) {
   if (demoMode) {
     root.innerHTML = `
       <div class="section-heading"><div><p class="eyebrow">Idle production</p><h2>Gameplay</h2></div></div>
       <p class="muted" role="status">Gameplay requires Passport authentication. The community demo remains available.</p>
     `;
-    return;
+    return () => {};
   }
 
   const client = createGameplayClient(
@@ -275,6 +336,19 @@ export async function mountGameplay(root, {
       const production = rule
         ? `${escapeHtml(rule.unitsPerHour)} ${escapeHtml(building.material)}/hour · ${escapeHtml(capLabel(rule.storageLimitMs))}`
         : 'Not present in the active server ruleset';
+      const estimate = owned && rule
+        ? estimatePendingProduction({ building: owned, rule, now: now() })
+        : null;
+      const estimateMarkup = estimate ? `
+        <dl class="game-production-estimate" aria-label="Estimated uncollected production">
+          <div><dt>Pending estimate</dt><dd>${escapeHtml(formatAmount(estimate.pendingUnits))} ${escapeHtml(building.material)}</dd></div>
+          <div><dt>Capacity remaining</dt><dd>${estimate.storageFull
+            ? 'Storage cap reached'
+            : `${escapeHtml(formatDuration(estimate.remainingCapacityMs))} · about ${escapeHtml(formatAmount(estimate.remainingCapacityUnits))} more`}</dd></div>
+          <div><dt>Next unit</dt><dd>${estimate.millisecondsUntilNext === null
+            ? 'Storage cap reached'
+            : `about ${escapeHtml(formatDuration(estimate.millisecondsUntilNext))}`}</dd></div>
+        </dl>` : '';
       return `
         <article class="game-building">
           <div class="game-building-icon" aria-hidden="true">${building.icon}</div>
@@ -282,8 +356,9 @@ export async function mountGameplay(root, {
             <h3>${building.name}</h3>
             <p>${owned ? `Level ${escapeHtml(owned.level)} · Active` : 'Not provisioned'}</p>
             <small>${production}</small>
+            ${estimateMarkup}
           </div>
-          <strong class="game-balance">${escapeHtml(formatAmount(balances.get(building.material) || '0'))}<span>${building.material}</span></strong>
+          <strong class="game-balance">${escapeHtml(formatAmount(balances.get(building.material) || '0'))}<span>collected ${building.material}</span></strong>
         </article>`;
     }).join('');
     const ruleset = accountState?.ruleSet;
@@ -296,7 +371,7 @@ export async function mountGameplay(root, {
         <div><p class="eyebrow">Your account · server-authoritative rules</p><h2>Idle production</h2></div>
         <span class="count">${ruleset ? `Ruleset v${escapeHtml(ruleset.versionNumber)}` : 'Passport'}</span>
       </div>
-      <p class="muted gameplay-intro">Production rates and storage caps are supplied by the active server ruleset.</p>
+      <p class="muted gameplay-intro">Production rates and storage caps are supplied by the active server ruleset. Pending production, remaining capacity, and next-unit times are local estimates from server timestamps and carry; collected balances change only after collection.</p>
       ${ruleset ? `<p class="rules-fingerprint">Rules fingerprint: <code>${escapeHtml(ruleset.fingerprint)}</code></p>` : ''}
       ${message}
       ${accountState ? `
@@ -400,4 +475,10 @@ export async function mountGameplay(root, {
   render();
   await loadAccountState();
   render();
+
+  const estimateTimer = setIntervalFn(() => {
+    if (view.accountState && !view.busy) render();
+  }, 1000);
+  estimateTimer?.unref?.();
+  return () => clearIntervalFn(estimateTimer);
 }

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   createGameplayClient,
+  estimatePendingProduction,
   gameplayErrorMessage,
   mountGameplay
 } from '../src/gameplay.js';
@@ -32,7 +33,7 @@ function accountState(accountId, fingerprint, provisioned = false) {
       versionNumber: 1,
       fingerprint,
       rules: definitions.map(([buildingType, assetCode, unitsPerHour]) => ({
-        buildingType, assetCode, unitsPerHour, storageLimitMs: 28_800_000
+        buildingType, level: 1, assetCode, unitsPerHour, storageLimitMs: 28_800_000
       }))
     },
     buildings: provisioned ? definitions.map(([buildingType, assetCode]) => ({
@@ -40,11 +41,56 @@ function accountState(accountId, fingerprint, provisioned = false) {
       buildingType,
       level: 1,
       assetCode,
-      activity: 'active'
+      activity: 'active',
+      lastSettledAt: '2026-10-12T00:00:00.000Z',
+      carryNumerator: '0'
     })) : [],
     balances: []
   };
 }
+
+test('pending production estimate uses server rule, timestamp, carry, and storage cap', () => {
+  const building = {
+    buildingType: 'wheat_farm', level: 1, assetCode: 'wheat', activity: 'active',
+    lastSettledAt: '2026-10-12T00:00:00.000Z', carryNumerator: '3000000'
+  };
+  const rule = {
+    buildingType: 'wheat_farm', level: 1, assetCode: 'wheat',
+    unitsPerHour: 60, storageLimitMs: 28_800_000
+  };
+  const estimate = estimatePendingProduction({
+    building, rule, now: Date.parse('2026-10-12T00:02:00.000Z')
+  });
+
+  assert.deepEqual(estimate, {
+    pendingUnits: '2',
+    remainingCapacityMs: 28_680_000,
+    remainingCapacityUnits: '478',
+    millisecondsUntilNext: 10_000,
+    storageFull: false
+  });
+});
+
+test('pending production estimate stops at capacity and never changes collected balances', () => {
+  const state = accountState(accountA, fingerprintA, true);
+  const building = state.buildings[0];
+  const rule = state.ruleSet.rules[0];
+  const balancesBefore = structuredClone(state.balances);
+  const estimate = estimatePendingProduction({
+    building,
+    rule,
+    now: Date.parse('2026-10-12T12:00:00.000Z')
+  });
+
+  assert.deepEqual(estimate, {
+    pendingUnits: '480',
+    remainingCapacityMs: 0,
+    remainingCapacityUnits: '0',
+    millisecondsUntilNext: null,
+    storageFull: true
+  });
+  assert.deepEqual(state.balances, balancesBefore);
+});
 
 class FakeRoot {
   set innerHTML(html) { this.html = html; }
@@ -251,6 +297,114 @@ test('gameplay panel stays unavailable without Passport in community demo mode',
   assert.match(root.innerHTML, /requires Passport authentication/);
   assert.match(root.innerHTML, /community demo remains available/);
   assert.equal(apiCalls, 0);
+});
+
+test('gameplay panel labels pending production as an estimate and keeps balances collected-only', async () => {
+  const root = new FakeRoot();
+
+  await mountGameplay(root, {
+    getSessionIdentity: async () => 'passport-subject-a',
+    passportFetch: async () => jsonResponse(200, accountState(accountA, fingerprintA, true))
+  });
+
+  assert.match(root.innerHTML, /local estimates from server timestamps and carry/i);
+  assert.match(root.innerHTML, /Pending estimate/);
+  assert.match(root.innerHTML, /Capacity remaining/);
+  assert.match(root.innerHTML, /Next unit/);
+  assert.match(root.innerHTML, /collected wheat/);
+  assert.match(root.innerHTML, /collected balances change only after collection/i);
+});
+
+test('pending production and next-unit countdown advance without reload and stop at the storage cap', async () => {
+  const root = new FakeRoot();
+  const settledAt = Date.parse('2026-10-12T00:00:00.000Z');
+  let currentTime = settledAt;
+  let tick;
+  let clearedTimer;
+  const state = accountState(accountA, fingerprintA, true);
+  state.balances = [{ assetCode: 'wheat', amount: '7' }];
+
+  const dispose = await mountGameplay(root, {
+    getSessionIdentity: async () => 'passport-subject-a',
+    passportFetch: async () => jsonResponse(200, state),
+    now: () => currentTime,
+    setIntervalFn: (callback, delay) => {
+      assert.equal(delay, 1000);
+      tick = callback;
+      return 42;
+    },
+    clearIntervalFn: (timer) => { clearedTimer = timer; }
+  });
+
+  assert.match(root.innerHTML, /Pending estimate<\/dt><dd>0 wheat/);
+  assert.match(root.innerHTML, /Next unit<\/dt><dd>about 1m 0s/);
+  assert.match(root.innerHTML, />7<span>collected wheat/);
+
+  currentTime += 30_000;
+  tick();
+  assert.match(root.innerHTML, /Next unit<\/dt><dd>about 30s/);
+  assert.match(root.innerHTML, /Pending estimate<\/dt><dd>0 wheat/);
+  assert.match(root.innerHTML, />7<span>collected wheat/);
+
+  currentTime += 30_000;
+  tick();
+  assert.match(root.innerHTML, /Pending estimate<\/dt><dd>1 wheat/);
+  assert.match(root.innerHTML, /Next unit<\/dt><dd>about 1m 0s/);
+  assert.match(root.innerHTML, />7<span>collected wheat/);
+
+  currentTime = settledAt + 28_800_000;
+  tick();
+  assert.match(root.innerHTML, /Pending estimate<\/dt><dd>480 wheat/);
+  assert.match(root.innerHTML, /Capacity remaining<\/dt><dd>Storage cap reached/);
+  assert.match(root.innerHTML, /Next unit<\/dt><dd>Storage cap reached/);
+
+  currentTime += 60_000;
+  tick();
+  assert.match(root.innerHTML, /Pending estimate<\/dt><dd>480 wheat/);
+  assert.match(root.innerHTML, />7<span>collected wheat/);
+
+  dispose();
+  assert.equal(clearedTimer, 42);
+});
+
+test('collection changes balances and resets estimates only from the refreshed server state', async () => {
+  const root = new FakeRoot();
+  const settledAt = Date.parse('2026-10-12T00:00:00.000Z');
+  let currentTime = settledAt + 60_000;
+  let tick;
+  let getCalls = 0;
+  const beforeCollection = accountState(accountA, fingerprintA, true);
+  beforeCollection.balances = [{ assetCode: 'wheat', amount: '7' }];
+  const afterCollection = accountState(accountA, fingerprintA, true);
+  afterCollection.buildings.forEach((building) => {
+    building.lastSettledAt = '2026-10-12T00:01:00.000Z';
+  });
+  afterCollection.balances = [{ assetCode: 'wheat', amount: '8' }];
+
+  await mountGameplay(root, {
+    getSessionIdentity: async () => 'passport-subject-a',
+    passportFetch: async (path, options) => {
+      if (options.method === 'POST') return jsonResponse(200, { credits: [] });
+      getCalls += 1;
+      return jsonResponse(200, getCalls === 1 ? beforeCollection : afterCollection);
+    },
+    now: () => currentTime,
+    setIntervalFn: (callback) => { tick = callback; return 43; },
+    clearIntervalFn: () => {}
+  });
+
+  assert.match(root.innerHTML, /Pending estimate<\/dt><dd>1 wheat/);
+  assert.match(root.innerHTML, />7<span>collected wheat/);
+
+  currentTime += 30_000;
+  tick();
+  assert.match(root.innerHTML, />7<span>collected wheat/);
+
+  await root.click_collect();
+  assert.equal(getCalls, 2);
+  assert.match(root.innerHTML, /Pending estimate<\/dt><dd>0 wheat/);
+  assert.match(root.innerHTML, /Next unit<\/dt><dd>about 30s/);
+  assert.match(root.innerHTML, />8<span>collected wheat/);
 });
 
 test('refresh reports completion and clears account data after authentication is lost', async () => {
