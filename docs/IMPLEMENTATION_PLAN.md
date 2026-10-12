@@ -807,3 +807,11 @@ now requires provider/JWKS transport failures to return
 wrong-audience tokens continue to return `401 UNAUTHORIZED`. This distinction
 is covered by an offline authentication test and does not weaken JWT claim or
 signature validation.
+
+The clean-checkout database validation was subsequently completed manually
+from commit `e019cc7` against the two authorized disposable databases. The
+guarded community suite passed all five integration tests and the guarded
+gameplay suite passed its single integration test, with zero failures and zero
+skips across both commands. Each harness used its repository-defined advisory
+lock and temporary-schema lifecycle; this result does not authorize production
+enablement or deployment.

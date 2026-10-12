@@ -135,3 +135,14 @@ deployment.
 No `.env` value, Passport token, idempotency key, account identifier, or
 database credential is recorded in this manifest. No production configuration
 was changed and nothing was published.
+
+### Clean-checkout disposable PostgreSQL execution (October 12, 2026)
+
+Commit `e019cc7` was checked out in an isolated temporary clone and executed
+manually against the two authorized local disposable databases with the suite
+guards enabled. Results were **5 community integrations passed** and **1
+gameplay integration passed**, with **0 failed and 0 skipped** across the two
+commands. The community harness used its `community_*` temporary schemas and
+advisory lock; the gameplay harness additionally verified an empty `public`
+schema before and after running migrations in its `gameplay_idle_*` temporary
+schema. No production system was targeted and nothing was published.
