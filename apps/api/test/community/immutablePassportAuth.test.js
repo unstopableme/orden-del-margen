@@ -17,6 +17,7 @@ const configuration = {
   issuer: 'https://auth.immutable.test/',
   jwksUri: 'https://auth.immutable.test/.well-known/jwks.json'
 };
+const accountId = '5720dbec-7649-4815-80f9-79fffd08e75f';
 const signingClient = {
   getSigningKey(keyId, callback) {
     if (keyId !== 'test-key') return callback(new Error('unknown key'));
@@ -35,12 +36,17 @@ function token(overrides = {}, options = {}) {
   });
 }
 
-async function withApp(identityStore, run) {
+async function withApp(identityStore, run, signingClientOverride = signingClient) {
   const app = express();
   app.use(express.json());
   app.post('/protected', createImmutablePassportAuthenticator({
-    identityStore, configuration, signingClient
+    identityStore, configuration, signingClient: signingClientOverride
   }), (req, res) => res.json({ caller: req.callerContext, receivedWallet: req.body.walletAddress }));
+  app.use((error, req, res, next) => {
+    void req;
+    if (res.headersSent) return next(error);
+    return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Request failed' } });
+  });
   const server = await new Promise((resolve) => {
     const listening = app.listen(0, '127.0.0.1', () => resolve(listening));
   });
@@ -57,6 +63,7 @@ test('verified Passport subject resolves the server-owned wallet and member mapp
     async findByIdentity(issuer, subject) {
       lookups.push([issuer, subject]);
       return {
+        accountId,
         memberId: 'member-1',
         walletAddress: '0x1111111111111111111111111111111111111111',
         properties: [{ id: 7, address: 'Verified property' }]
@@ -67,11 +74,15 @@ test('verified Passport subject resolves the server-owned wallet and member mapp
     const response = await fetch(`${baseUrl}/protected`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ walletAddress: '0xffffffffffffffffffffffffffffffffffffffff' })
+      body: JSON.stringify({
+        accountId: '00000000-0000-0000-0000-000000000000',
+        walletAddress: '0xffffffffffffffffffffffffffffffffffffffff'
+      })
     });
     assert.equal(response.status, 200);
     const payload = await response.json();
     assert.deepEqual(lookups, [[configuration.issuer, 'passport-user-1']]);
+    assert.equal(payload.caller.accountId, accountId);
     assert.equal(payload.caller.memberId, 'member-1');
     assert.equal(payload.caller.walletAddress, '0x1111111111111111111111111111111111111111');
     assert.equal(payload.receivedWallet, '0xffffffffffffffffffffffffffffffffffffffff');
@@ -96,10 +107,98 @@ test('missing, invalid-audience, expired, and unlinked Passport tokens are rejec
   });
 });
 
+test('JWKS provider failures return 503 and remain distinct from invalid tokens', async () => {
+  const identityStore = { async findByIdentity() { throw new Error('must not be called'); } };
+  const unavailableSigningClient = {
+    getSigningKey(keyId, callback) {
+      assert.equal(keyId, 'test-key');
+      callback(new Error('provider network unavailable'));
+    }
+  };
+  await withApp(identityStore, async (baseUrl) => {
+    const providerFailure = await fetch(`${baseUrl}/protected`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token()}` }
+    });
+    assert.equal(providerFailure.status, 503);
+    assert.deepEqual(await providerFailure.json(), {
+      error: {
+        code: 'AUTH_PROVIDER_UNAVAILABLE',
+        message: 'Passport authentication is temporarily unavailable'
+      }
+    });
+
+    const invalid = await fetch(`${baseUrl}/protected`, {
+      method: 'POST', headers: { Authorization: 'Bearer not-a-jwt' }
+    });
+    assert.equal(invalid.status, 401);
+    assert.equal((await invalid.json()).error.code, 'UNAUTHORIZED');
+  }, unavailableSigningClient);
+});
+
+test('blank Passport subjects are rejected before identity lookup', async () => {
+  let lookups = 0;
+  const identityStore = {
+    async findByIdentity() {
+      lookups += 1;
+      return null;
+    }
+  };
+  await withApp(identityStore, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/protected`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token({}, { subject: '   ' })}` }
+    });
+    assert.equal(response.status, 401);
+    assert.equal(lookups, 0);
+  });
+});
+
+test('identity persistence failures remain server errors instead of invalid-token responses', async () => {
+  const identityStore = {
+    async findByIdentity() {
+      throw new Error('database unavailable');
+    }
+  };
+  await withApp(identityStore, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/protected`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token()}` }
+    });
+    assert.equal(response.status, 500);
+    assert.equal((await response.json()).error.code, 'INTERNAL_ERROR');
+  });
+});
+
+test('a missing server-owned account mapping cannot authenticate as gameplay identity', async () => {
+  const identityStore = {
+    async findByIdentity() {
+      return {
+        accountId: 'not-a-uuid',
+        memberId: 'member-1',
+        walletAddress: '0x1111111111111111111111111111111111111111',
+        properties: []
+      };
+    }
+  };
+  await withApp(identityStore, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/protected`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token()}` }
+    });
+    assert.equal(response.status, 500);
+    assert.equal((await response.json()).error.code, 'INTERNAL_ERROR');
+  });
+});
+
 test('sid is optional because issuer and subject establish the Passport identity', async () => {
   const identityStore = {
     async findByIdentity() {
-      return { memberId: 'member-1', walletAddress: '0x1111111111111111111111111111111111111111', properties: [] };
+      return {
+        accountId,
+        memberId: 'member-1',
+        walletAddress: '0x1111111111111111111111111111111111111111',
+        properties: []
+      };
     }
   };
   await withApp(identityStore, async (baseUrl) => {
@@ -126,7 +225,12 @@ test('a rotated JWKS key id is resolved without restarting the authenticator', a
   };
   const identityStore = {
     async findByIdentity() {
-      return { memberId: 'member-1', walletAddress: '0x1111111111111111111111111111111111111111', properties: [] };
+      return {
+        accountId,
+        memberId: 'member-1',
+        walletAddress: '0x1111111111111111111111111111111111111111',
+        properties: []
+      };
     }
   };
   const app = express();
@@ -171,6 +275,7 @@ test('authenticated property route returns only the server-owned Passport mappin
   const identityStore = {
     async findByIdentity() {
       return {
+        accountId,
         memberId: 'member-1',
         walletAddress: '0x1111111111111111111111111111111111111111',
         properties: [{ id: 7, address: 'Verified property', accessRole: 'member' }]

@@ -779,3 +779,31 @@ remains required before any runtime integration is enabled:
   leaves all gameplay routes unavailable by default.
 - Regression checks confirming the community demo starts without PostgreSQL
   and its existing routes and non-monetary semantics are unchanged.
+
+## Local gameplay validation record (October 12, 2026)
+
+The development-only flags were enabled in ignored local environment files and
+the API was run against `orden_margen_gameplay_dev`; no production setting or
+deployment was changed. A real browser session at `http://localhost:8000`,
+authenticated as the linked **Passport Developer** identity, completed the
+following flow:
+
+1. The initial authenticated account-state query succeeded.
+2. The UI provisioned exactly five Level 1 buildings: provisioner, wheat farm,
+   lumber mill, quarry, and textile mill.
+3. The UI submitted an initial collection, then a later collection after real
+   elapsed production time. PostgreSQL recorded `wheat=1` and `wood=1`, with
+   two matching credit-ledger entries totaling two units.
+4. Replaying the first persisted idempotency key returned the original result,
+   kept one request row for that account/key, and left balances unchanged.
+5. Final process inspection showed one web listener on port 8000 and one API
+   listener on port 3001.
+
+The first authenticated attempt exposed an operational gap: when the API could
+not reach Immutable's JWKS endpoint, it returned the same 401 response used for
+an invalid token, which the UI described as an expired session. The milestone
+now requires provider/JWKS transport failures to return
+`503 AUTH_PROVIDER_UNAVAILABLE`; malformed, expired, incorrectly signed, or
+wrong-audience tokens continue to return `401 UNAUTHORIZED`. This distinction
+is covered by an offline authentication test and does not weaken JWT claim or
+signature validation.

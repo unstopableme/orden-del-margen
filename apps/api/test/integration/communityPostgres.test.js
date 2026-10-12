@@ -51,36 +51,68 @@ function resetData() {
 async function isolatedDatabase(t, prefix) {
   const schema = `${prefix}_${process.pid}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   assert.match(schema, /^community_[a-z0-9_]+$/);
+  let admin;
+  let adminClient;
+  let pool;
+  let lockAcquired = false;
+  let schemaCreated = false;
+
+  t.after(async () => {
+    const cleanupErrors = [];
+    const attempt = async (cleanup) => {
+      try {
+        await cleanup();
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    };
+
+    try {
+      await attempt(resetData);
+      if (pool) await attempt(() => pool.end());
+      if (schemaCreated && adminClient) {
+        await attempt(async () => {
+          assert.match(schema, /^community_[a-z0-9_]+$/);
+          await adminClient.query(`DROP SCHEMA "${schema}" CASCADE`);
+        });
+      }
+    } finally {
+      if (lockAcquired && adminClient) {
+        await attempt(() => adminClient.query(
+          "SELECT pg_advisory_unlock(hashtext('orden-del-margen-community-integration'))"
+        ));
+      }
+      if (adminClient) await attempt(() => adminClient.release());
+      if (admin) await attempt(() => admin.end());
+    }
+
+    if (cleanupErrors.length === 1) throw cleanupErrors[0];
+    if (cleanupErrors.length > 1) {
+      throw new AggregateError(cleanupErrors, 'PostgreSQL integration fixture cleanup failed');
+    }
+  });
+
   const connectionConfig = createPoolConfig({
     ...process.env,
     DATABASE_URL: testUrl,
     PGSSL_MODE: process.env.TEST_PGSSL_MODE || process.env.PGSSL_MODE
   });
-  const admin = new Pool({ ...connectionConfig, max: 1 });
-  const adminClient = await admin.connect();
+  admin = new Pool({ ...connectionConfig, max: 1 });
+  adminClient = await admin.connect();
   const actual = await adminClient.query('SELECT current_database() AS database_name');
   assert.equal(actual.rows[0].database_name, testIdentity.database);
   const lock = await adminClient.query(
     "SELECT pg_try_advisory_lock(hashtext('orden-del-margen-community-integration')) AS acquired"
   );
   assert.equal(lock.rows[0].acquired, true, 'integration database is already in use');
+  lockAcquired = true;
 
   await adminClient.query(`CREATE SCHEMA "${schema}"`);
-  const pool = new Pool({
+  schemaCreated = true;
+  pool = new Pool({
     ...connectionConfig,
     max: 20,
     options: `-c search_path=${schema}`
-  });
-  t.after(async () => {
-    resetData();
-    await pool.end();
-    assert.match(schema, /^community_[a-z0-9_]+$/);
-    await adminClient.query(`DROP SCHEMA "${schema}" CASCADE`);
-    await adminClient.query(
-      "SELECT pg_advisory_unlock(hashtext('orden-del-margen-community-integration'))"
-    );
-    adminClient.release();
-    await admin.end();
   });
   await runMigrations(pool);
   resetData();
@@ -206,7 +238,7 @@ test('PostgreSQL rate limits are shared across application instances', { skip: s
   assert.equal(limited.retryAfterSeconds > 0, true);
 });
 
-test('Passport subject maps through a server-owned wallet binding to properties', { skip: skipReason }, async (t) => {
+test('Passport identity sequentially reuses one account through its server-owned wallet binding', { skip: skipReason }, async (t) => {
   const { pool } = await isolatedDatabase(t, 'community_passport_mapping_test');
   const organization = await pool.query(`INSERT INTO organizations (name) VALUES ('Integration owner') RETURNING id`);
   const property = await pool.query(`INSERT INTO properties (organization_id, address, city, state)
@@ -226,16 +258,32 @@ test('Passport subject maps through a server-owned wallet binding to properties'
   const identity = await identityStore.findByIdentity(
     'https://auth.immutable.com/', 'passport-subject-test'
   );
+  assert.match(identity.accountId, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
   assert.equal(identity.memberId, 'member-1');
   assert.equal(identity.walletAddress, '0x1111111111111111111111111111111111111111');
   assert.equal(identity.properties.length, 1);
   assert.equal(identity.properties[0].address, 'Verified integration property');
+  const repeatedIdentity = await identityStore.findByIdentity(
+    'https://auth.immutable.com/', 'passport-subject-test'
+  );
+  assert.equal(repeatedIdentity.accountId, identity.accountId);
+  const accounts = await pool.query('SELECT id FROM authenticated_accounts');
+  const identityMappings = await pool.query(`
+    SELECT account_id FROM authenticated_account_identities
+    WHERE provider='immutable-passport'
+      AND issuer='https://auth.immutable.com/'
+      AND subject='passport-subject-test'
+  `);
+  assert.deepEqual(accounts.rows, [{ id: identity.accountId }]);
+  assert.deepEqual(identityMappings.rows, [{ account_id: identity.accountId }]);
   assert.equal(await identityStore.findByIdentity(
     'https://different-issuer.example/', 'passport-subject-test'
   ), null);
+  assert.equal((await pool.query('SELECT count(*)::integer AS count FROM authenticated_accounts')).rows[0].count, 1);
   await pool.query(`UPDATE passport_wallet_bindings SET revoked_at=now(), revoked_by='integration-test'
     WHERE passport_issuer='https://auth.immutable.com/' AND passport_subject='passport-subject-test'`);
   assert.equal(await identityStore.findByIdentity(
     'https://auth.immutable.com/', 'passport-subject-test'
   ), null);
+  assert.equal((await pool.query('SELECT count(*)::integer AS count FROM authenticated_accounts')).rows[0].count, 1);
 });

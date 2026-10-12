@@ -5,7 +5,7 @@
 ```mermaid
 graph LR
     A["Frontend client<br/>Immutable Passport SDK"] -->|Fresh OIDC ID token| B["Express authentication<br/>RS256 + JWKS + iss/aud/exp"]
-    B -->|Verified subject: sub| C["PostgreSQL identity mapping<br/>sub to wallet to properties"]
+    B -->|Verified issuer + subject| C["PostgreSQL identity mapping<br/>community member; optional wallet"]
 ```
 
 In Passport mode, the frontend sends a fresh ID token in the
@@ -16,11 +16,13 @@ issuer, Passport client ID as audience, and token time claims. It requires
 and subject identify the mapped account.
 
 The wallet is not read from a request body, query, path, or undocumented token
-claim. The verified `sub` resolves through `passport_wallet_bindings`, and the
-stored wallet resolves through `wallet_property_access`. `GET
-/api/community/me/properties` exposes only that server-owned mapping. A valid
-but unmapped identity is forbidden (403); a missing or invalid token is
-unauthorized (401).
+claim. A verified `(iss, sub)` resolves either through
+`passport_community_member_bindings` to a community profile, or through
+`passport_wallet_bindings` to a profile and server-owned wallet. Only the
+second binding grants property access through `wallet_property_access`;
+`GET /api/community/me/properties` rejects identities without that wallet
+binding. A valid but unmapped identity is forbidden (403); a missing or
+invalid token is unauthorized (401).
 
 ## Required external configuration
 
@@ -37,10 +39,11 @@ unauthorized (401).
 - The default JWKS is `https://auth.immutable.com/.well-known/jwks.json`;
   override `IMMUTABLE_PASSPORT_JWKS_URI` only with the provider-documented
   HTTPS endpoint.
-- Populate subject/wallet/property bindings through a reviewed, authenticated
-  administrative process. Migration 005 creates storage but deliberately does
-  not infer, seed, or trust a client-submitted wallet. The required reviewed
-  linking workflow is not implemented in this repository.
+- Populate subject/member bindings only from server-verified issuer and subject
+  claims. Migration 009 provides this wallet-independent community mapping;
+  it does not grant wallet or property access. Wallet/property bindings remain
+  a separate reviewed administrative operation and must never use a
+  client-submitted or inferred wallet.
 
 No Passport credentials or bearer tokens belong in source control or logs.
 The frontend uses the Passport SDK when demo mode is disabled and obtains the
@@ -50,6 +53,28 @@ local storage. Its default local demo mode does not load Passport.
 If a future linking workflow queries Passport linked addresses, use the
 appropriate Passport access token server-side and verify the provider
 response. Do not let a caller choose the wallet/property association.
+
+## Isolated local Passport development
+
+`apps/api/scripts/provisionGameplayDev.ps1` creates a new
+`orden_margen_gameplay_dev` database owned by `odm_accounts_test`, a dedicated
+limited API role, and an ignored `apps/api/.env.gameplay-dev` profile. It
+refuses to overwrite the profile or create the database/role if either already
+exists. Run it from PowerShell at the repository root; it prompts for the
+local PostgreSQL administrator password using hidden input. Review all
+migrations before running them: the legacy `001_initialize_equipment_tiers`
+migration drops two named equipment tables, so run the full migration set
+only against a verified empty database.
+
+`apps/api/scripts/linkPassportDevelopmentIdentity.js` is a one-time local
+linker. It only runs against that development database with gameplay disabled,
+listens on loopback, accepts requests only from `http://localhost:8000`, and
+verifies the submitted ID token's RS256 signature, issuer, audience, and
+expiry against the configured JWKS before storing its issuer/subject mapping
+to the dedicated `Passport Developer` community member. The token is sent
+directly from the SDK session to the loopback listener and is not logged or
+persisted. This development mapping has no wallet binding and grants no
+property access. Do not use this helper for production or shared databases.
 
 ## Development bridge
 

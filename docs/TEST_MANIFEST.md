@@ -13,7 +13,7 @@ This file is the authoritative inventory and execution boundary for automated te
 | Idle collection planning | `apps/api/test/gameplay/idleCollection.test.js` | READY | Pure batch settlement, ownership consistency, asset aggregation, ledger reconciliation, carry restoration, and input preservation; no authentication, database, transaction, or route |
 | Weekly payout arithmetic | `apps/api/test/gameplay/weeklyPayout.test.js` | READY | Pure deterministic allocator; no snapshot, job, ledger, or database |
 | Community authentication and authorization | `apps/api/test/community/communityAuthorization.test.js` | READY | Route-level 401/403, ownership, membership, and no-mutation assertions |
-| Immutable Passport authentication | `apps/api/test/community/immutablePassportAuth.test.js` | READY | Offline RSA/JWKS verification, audience/expiry checks, server-owned identity mapping, and authenticated property-route behavior |
+| Immutable Passport authentication | `apps/api/test/community/immutablePassportAuth.test.js` | READY | Offline RSA/JWKS verification, audience/expiry checks, server-owned identity mapping, authenticated property-route behavior, and distinct `503 AUTH_PROVIDER_UNAVAILABLE` handling for JWKS-provider failures versus `401 UNAUTHORIZED` for invalid tokens |
 | Community duplicate rewards | `apps/api/test/community/communityRewards.test.js` | READY | In-memory retry and concurrent-request coverage with exact point totals |
 | Community CORS | `apps/api/test/cors.test.js` | READY | Allowed/rejected origins, preflight, and authentication independence |
 | Database TLS and operation safety | `apps/api/test/databaseConfig.test.js`, `apps/api/test/configurationSecurity.test.js` | READY | Certificate verification, unsafe URL rejection, explicit target confirmation, production demo guards, and trusted-proxy validation |
@@ -105,3 +105,33 @@ not executable tests and do not change any suite state above.
 - `$DONCELLA` milestone gift tracking: PASSED. Fictional gift distributions use the strict global currency standard for layout presentation only.
 - Validation loop isolation: PASSED. Milestone unlock checks operate strictly as static visual text layout mockups.
 - Execution and state mutation: NOT RUN / NOT AUTHORIZED. No automated calculation engines, data updates, ledger state modifications, or background validation scripts are created or run.
+
+### Verified local browser and development PostgreSQL execution (October 12, 2026)
+
+This session independently validated the feature-flagged gameplay flow against
+the dedicated local development database `orden_margen_gameplay_dev`, using an
+authenticated Opera session at `http://localhost:8000` with the linked
+**Passport Developer** identity. This was an application-development
+verification, not the disposable integration-test harness and not a production
+deployment.
+
+- Initial authenticated account-state query: **passed**.
+- Explicit provisioning: **passed**, with exactly five Level 1 building types.
+- Browser collection and refresh: **passed**. After real elapsed production
+  time the persisted balances were `wheat=1` and `wood=1`; the ledger contained
+  two credit entries totaling two units.
+- Idempotent replay: **passed**. Reusing the first persisted account/key pair
+  returned the original result, retained one request row, and did not change
+  balances.
+- Process isolation: **passed**, with one listener each on local ports 8000 and
+  3001.
+- Browser client tests: `node --test apps/web/test/gameplay.test.js` reported
+  **13 passed, 0 failed, 0 skipped**.
+- Immutable Passport authentication tests, including the JWKS outage/invalid
+  token distinction: `node --test
+  apps/api/test/community/immutablePassportAuth.test.js` reported **10 passed,
+  0 failed, 0 skipped**.
+
+No `.env` value, Passport token, idempotency key, account identifier, or
+database credential is recorded in this manifest. No production configuration
+was changed and nothing was published.

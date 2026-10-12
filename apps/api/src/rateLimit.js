@@ -78,6 +78,20 @@ function configuredRateLimits(environment = process.env) {
     rewards: {
       limit: positiveInteger(environment.REWARD_RATE_LIMIT, 10, 'REWARD_RATE_LIMIT'),
       windowMs: positiveInteger(environment.REWARD_RATE_WINDOW_MS, 60_000, 'REWARD_RATE_WINDOW_MS')
+    },
+    gameplay: {
+      ip: {
+        limit: positiveInteger(environment.GAMEPLAY_IP_RATE_LIMIT, 60, 'GAMEPLAY_IP_RATE_LIMIT'),
+        windowMs: positiveInteger(environment.GAMEPLAY_IP_RATE_WINDOW_MS, 60_000, 'GAMEPLAY_IP_RATE_WINDOW_MS')
+      },
+      account: {
+        limit: positiveInteger(environment.GAMEPLAY_ACCOUNT_RATE_LIMIT, 120, 'GAMEPLAY_ACCOUNT_RATE_LIMIT'),
+        windowMs: positiveInteger(
+          environment.GAMEPLAY_ACCOUNT_RATE_WINDOW_MS,
+          60_000,
+          'GAMEPLAY_ACCOUNT_RATE_WINDOW_MS'
+        )
+      }
     }
   };
 }

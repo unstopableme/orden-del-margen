@@ -56,6 +56,16 @@ export async function passportFetch(path, options = {}) {
       ? 'Your Passport identity is valid but is not linked to a community membership.'
       : 'Your identity does not have permission for this action.');
     error.status = 403;
+    error.code = payload?.error?.code;
+    throw error;
+  }
+  if (response.status === 503) {
+    const payload = await response.json().catch(() => null);
+    const error = new Error(payload?.error?.code === 'AUTH_PROVIDER_UNAVAILABLE'
+      ? 'Immutable Passport is temporarily unavailable. Try again shortly.'
+      : 'The service is temporarily unavailable. Try again shortly.');
+    error.status = 503;
+    error.code = payload?.error?.code;
     throw error;
   }
   return response;

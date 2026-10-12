@@ -18,6 +18,13 @@ function configuredTrustProxy(environment = process.env) {
   return entries;
 }
 
+function configuredGameplayApiEnabled(environment = process.env) {
+  const value = environment.GAMEPLAY_API_ENABLED;
+  if (value === undefined || value === 'false') return false;
+  if (value === 'true') return true;
+  throw new Error('GAMEPLAY_API_ENABLED must be true or false');
+}
+
 function createApp({
   pool = defaultPool,
   communityPersistence = null,
@@ -25,8 +32,21 @@ function createApp({
   trustProxy = configuredTrustProxy(),
   rateLimitStore,
   rateLimits,
-  communityAuthenticate
+  communityAuthenticate,
+  gameplayApiEnabled = configuredGameplayApiEnabled(),
+  gameplayCollectionService = null,
+  gameplayAuthenticate = null
 } = {}) {
+if (typeof gameplayApiEnabled !== 'boolean') {
+  throw new TypeError('gameplayApiEnabled must be a boolean');
+}
+if (gameplayApiEnabled && !pool) {
+  throw new Error('GAMEPLAY_API_ENABLED requires PostgreSQL');
+}
+if (gameplayApiEnabled && (!gameplayCollectionService || !gameplayAuthenticate)) {
+  throw new Error('GAMEPLAY_API_ENABLED requires the gameplay service and authenticated middleware');
+}
+
 const app = express();
 app.set('trust proxy', trustProxy);
 
@@ -37,7 +57,7 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
   }
-  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, Idempotency-Key');
   res.setHeader('Access-Control-Allow-Methods', 'GET, PATCH, POST, OPTIONS');
 
   if (req.method === 'OPTIONS') {
@@ -65,6 +85,16 @@ if (pool) {
   app.use('/api/properties', propertiesRouter);
   app.use('/api/opportunities', opportunitiesRouter);
   app.use('/api/acquisitions', acquisitionsRouter);
+}
+
+if (gameplayApiEnabled) {
+  const { createGameplayRouter } = require('./routes/gameplay');
+  app.use('/api/gameplay', createGameplayRouter({
+    service: gameplayCollectionService,
+    authenticate: gameplayAuthenticate,
+    rateLimitStore,
+    rateLimits
+  }));
 }
 
 app.use('/api/community', createCommunityRouter({
@@ -95,7 +125,8 @@ app.use((error, req, res, next) => {
 return app;
 }
 
-module.exports = createApp();
+module.exports = createApp({ gameplayApiEnabled: false });
 module.exports.createApp = createApp;
 module.exports.configuredOrigins = configuredOrigins;
 module.exports.configuredTrustProxy = configuredTrustProxy;
+module.exports.configuredGameplayApiEnabled = configuredGameplayApiEnabled;

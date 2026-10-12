@@ -1,16 +1,16 @@
 const fs = require('fs');
 const path = require('path');
-const pool = require('./db');
 const {
   assertDatabaseOperationConfiguration,
   verifyDatabaseTarget
 } = require('./databaseConfig');
 
-async function runMigrations(targetPool = pool) {
-  if (!targetPool) {
+async function runMigrations(targetPool) {
+  const migrationPool = targetPool === undefined ? require('./db') : targetPool;
+  if (!migrationPool) {
     throw new Error('DATABASE_URL is required to run migrations');
   }
-  const client = await targetPool.connect();
+  const client = await migrationPool.connect();
 
   try {
     await client.query(`
@@ -57,6 +57,7 @@ async function runMigrations(targetPool = pool) {
 }
 
 if (require.main === module) {
+  const pool = require('./db');
   let operation;
   try {
     operation = assertDatabaseOperationConfiguration(process.env, { allowProduction: true });

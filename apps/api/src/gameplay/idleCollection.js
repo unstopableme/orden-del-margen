@@ -2,8 +2,8 @@
 
 const { calculateIdleProduction } = require('./idleProduction');
 
-// Pure settlement plan. A future authenticated transaction must load and lock
-// owned buildings, supply one database timestamp, and persist this atomically.
+// The PostgreSQL service supplies owned, locked buildings and one database
+// timestamp, then persists this pure settlement plan atomically.
 function planIdleCollection({ accountId, buildings, settledAt } = {}) {
   if (typeof accountId !== 'string' || !accountId.trim()) {
     throw new TypeError('accountId must be a nonempty server-owned account key');
@@ -35,7 +35,8 @@ function planIdleCollection({ accountId, buildings, settledAt } = {}) {
       level: building.level,
       lastSettledAt: building.lastSettledAt,
       carryNumerator: building.carryNumerator,
-      settledAt
+      settledAt,
+      productionRule: building.productionRule
     });
     const units = BigInt(result.producedUnits);
     credits.set(result.asset, (credits.get(result.asset) || 0n) + units);

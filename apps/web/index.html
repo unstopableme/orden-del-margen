@@ -26,9 +26,11 @@
     </div>
     <script type="module">
       const demoMode = import.meta.env.VITE_COMMUNITY_DEMO_MODE === 'true';
+      const gameplayUiEnabled = import.meta.env.VITE_GAMEPLAY_UI_ENABLED === 'true';
       const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
       let communityFetch;
       let passportInstance;
+      let getGameplaySessionIdentity;
 
       function authorizedHeaders(includeJson = false) {
         const headers = {};
@@ -46,6 +48,10 @@
         const passport = await import('./src/passport.js');
         communityFetch = passport.passportFetch;
         passportInstance = passport.passportInstance;
+        getGameplaySessionIdentity = async () => {
+          const user = await passportInstance.getUser();
+          return user?.profile?.sub || null;
+        };
         await passport.completePassportRedirect();
         document.querySelector('#passport-login').addEventListener('click', async () => {
           await passport.signIn();
@@ -67,7 +73,7 @@
           .replaceAll("'", '&#039;');
       }
 
-      function renderDashboard(dashboard) {
+      async function renderDashboard(dashboard) {
         const {
           member,
           announcements,
@@ -214,6 +220,19 @@
           });
           window.location.reload();
         });
+
+        if (gameplayUiEnabled) {
+          const gameplayPanel = document.createElement('section');
+          gameplayPanel.id = 'gameplay-panel';
+          gameplayPanel.className = 'card gameplay-panel';
+          document.querySelector('#app').append(gameplayPanel);
+          const { mountGameplay } = await import('./src/gameplay.js');
+          await mountGameplay(gameplayPanel, {
+            passportFetch: communityFetch,
+            getSessionIdentity: getGameplaySessionIdentity,
+            demoMode
+          });
+        }
       }
 
       async function loadDashboard() {
