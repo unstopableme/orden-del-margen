@@ -81,6 +81,10 @@ test('authenticated gameplay query, provisioning, and collection use only the ca
     async collect(input) {
       calls.push(['collect', input]);
       return { accountId, rulesFingerprint: fingerprint, credits: [] };
+    },
+    async upgradeBuilding(input) {
+      calls.push(['upgrade', input]);
+      return { accountId, rulesFingerprint: fingerprint, building: { level: 2 } };
     }
   };
   const baseUrl = await withServer(t, enabledApp(service));
@@ -123,6 +127,27 @@ test('authenticated gameplay query, provisioning, and collection use only the ca
   });
   assert.deepEqual(calls[2], ['collect', {
     accountId, idempotencyKey: 'collect-001', expectedRulesFingerprint: fingerprint
+  }]);
+
+  const upgradeResponse = await fetch(`${baseUrl}/api/gameplay/idle-buildings/wheat_farm/upgrade`, {
+    method: 'POST',
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json',
+      'Idempotency-Key': 'upgrade-001'
+    },
+    body: JSON.stringify({ expectedRulesFingerprint: fingerprint, targetLevel: 2 })
+  });
+  assert.equal(upgradeResponse.status, 200);
+  assert.deepEqual(await upgradeResponse.json(), {
+    accountId, rulesFingerprint: fingerprint, building: { level: 2 }
+  });
+  assert.deepEqual(calls[3], ['upgrade', {
+    accountId,
+    buildingType: 'wheat_farm',
+    targetLevel: 2,
+    idempotencyKey: 'upgrade-001',
+    expectedRulesFingerprint: fingerprint
   }]);
 });
 

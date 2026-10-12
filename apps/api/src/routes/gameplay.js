@@ -8,7 +8,8 @@ const {
 } = require('../rateLimit');
 const {
   CollectionConflictError,
-  CollectionNotProvisionedError
+  CollectionNotProvisionedError,
+  BuildingUpgradeError
 } = require('../gameplay/postgresIdleCollection');
 
 const FINGERPRINT_PATTERN = /^[0-9a-f]{64}$/;
@@ -42,7 +43,8 @@ function expectedRulesFingerprint(body, res) {
 }
 
 function handleServiceError(error, res, next) {
-  if (error instanceof CollectionConflictError || error instanceof CollectionNotProvisionedError) {
+  if (error instanceof CollectionConflictError || error instanceof CollectionNotProvisionedError ||
+      error instanceof BuildingUpgradeError) {
     return res.status(error.status).json({
       error: { code: error.code, message: error.message }
     });
@@ -144,6 +146,32 @@ function createGameplayRouter({
     try {
       const result = await service.collect({
         accountId: req.callerContext?.accountId,
+        idempotencyKey,
+        expectedRulesFingerprint: fingerprint
+      });
+      return res.json(result);
+    } catch (error) {
+      return handleServiceError(error, res, next);
+    }
+  });
+
+  router.post('/idle-buildings/:buildingType/upgrade', async (req, res, next) => {
+    const body = requestBody(req, res);
+    if (!body) return;
+    const fingerprint = expectedRulesFingerprint(body, res);
+    if (!fingerprint) return;
+    if (!Number.isInteger(body.targetLevel) || body.targetLevel !== 2) {
+      return invalidRequest(res, 'targetLevel must be 2 for this prototype');
+    }
+    const idempotencyKey = req.get('Idempotency-Key');
+    if (typeof idempotencyKey !== 'string' || !IDEMPOTENCY_PATTERN.test(idempotencyKey)) {
+      return invalidRequest(res, 'Idempotency-Key must contain 1-128 supported characters');
+    }
+    try {
+      const result = await service.upgradeBuilding({
+        accountId: req.callerContext?.accountId,
+        buildingType: req.params.buildingType,
+        targetLevel: body.targetLevel,
         idempotencyKey,
         expectedRulesFingerprint: fingerprint
       });

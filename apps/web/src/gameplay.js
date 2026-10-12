@@ -44,6 +44,7 @@ export function createGameplayClient(
   let sessionVersion = 0;
   let accountStateRequestVersion = 0;
   const pendingCollections = new Map();
+  const pendingUpgrades = new Map();
 
   function pendingCollectionKey(identity, authenticatedAccountId) {
     return `${identity}\u0000${authenticatedAccountId}`;
@@ -55,6 +56,7 @@ export function createGameplayClient(
     accountId = null;
     accountStateRequestVersion += 1;
     pendingCollections.clear();
+    pendingUpgrades.clear();
   }
 
   async function currentIdentity() {
@@ -129,6 +131,7 @@ export function createGameplayClient(
         if (accountId !== null && accountId !== state.accountId) {
           sessionVersion += 1;
           pendingCollections.clear();
+          pendingUpgrades.clear();
         }
         accountId = state.accountId;
         return state;
@@ -178,6 +181,45 @@ export function createGameplayClient(
           if (pendingCollections.get(operationKey) === operation) {
             pendingCollections.delete(operationKey);
           }
+          return result;
+        }).finally(() => {
+          operation.promise = null;
+        });
+        return operation.promise;
+      })();
+    },
+
+    upgradeBuilding({
+      accountId: requestedAccountId, buildingType, targetLevel = 2,
+      expectedRulesFingerprint
+    }) {
+      return (async () => {
+        const requestSession = await beginRequest();
+        if (!accountId || requestedAccountId !== accountId) {
+          accountId = null;
+          throw sessionChangedError();
+        }
+        const operationKey = `${requestSession.identity}\u0000${accountId}\u0000${buildingType}`;
+        let operation = pendingUpgrades.get(operationKey);
+        if (operation?.promise) return operation.promise;
+        if (!operation) {
+          operation = {
+            key: createIdempotencyKey(), expectedRulesFingerprint, targetLevel, promise: null
+          };
+          pendingUpgrades.set(operationKey, operation);
+        }
+        operation.promise = request(`/api/gameplay/idle-buildings/${encodeURIComponent(buildingType)}/upgrade`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': operation.key
+          },
+          body: JSON.stringify({
+            expectedRulesFingerprint: operation.expectedRulesFingerprint,
+            targetLevel: operation.targetLevel
+          })
+        }, requestSession).then((result) => {
+          if (pendingUpgrades.get(operationKey) === operation) pendingUpgrades.delete(operationKey);
           return result;
         }).finally(() => {
           operation.promise = null;
@@ -280,6 +322,9 @@ export function gameplayErrorMessage(error) {
     if (error.code === 'GAMEPLAY_NOT_PROVISIONED') {
       return 'Provision your initial buildings before collecting.';
     }
+    if (error.code === 'INSUFFICIENT_COLLECTED_BALANCE') {
+      return 'Not enough collected materials are available for this building upgrade.';
+    }
     return 'The rules or collection request conflicted. Refresh the account state, then retry.';
   }
   if (error?.status === 429) {
@@ -323,16 +368,22 @@ export async function mountGameplay(root, {
   function render() {
     const accountState = view.accountState;
     const rules = accountState?.ruleSet?.rules || [];
+    const upgradeCosts = accountState?.ruleSet?.upgradeCosts || [];
     const buildings = accountState?.buildings || [];
     const balances = new Map((accountState?.balances || [])
       .map((balance) => [balance.assetCode, balance.amount]));
     const provisioned = buildings.length === BUILDINGS.length;
-    const missingRules = BUILDINGS.some((building) =>
-      !rules.some((rule) => rule.buildingType === building.type)
-    );
-    const cards = BUILDINGS.map((building) => {
-      const rule = rules.find((candidate) => candidate.buildingType === building.type);
+    const missingRules = BUILDINGS.some((building) => {
       const owned = buildings.find((candidate) => candidate.buildingType === building.type);
+      const requiredLevel = owned ? Number(owned.level) : 1;
+      return !rules.some((rule) =>
+        rule.buildingType === building.type && Number(rule.level) === requiredLevel);
+    });
+    const cards = BUILDINGS.map((building) => {
+      const owned = buildings.find((candidate) => candidate.buildingType === building.type);
+      const rule = rules.find((candidate) =>
+        candidate.buildingType === building.type &&
+        Number(candidate.level) === (owned ? Number(owned.level) : 1));
       const production = rule
         ? `${escapeHtml(rule.unitsPerHour)} ${escapeHtml(building.material)}/hour · ${escapeHtml(capLabel(rule.storageLimitMs))}`
         : 'Not present in the active server ruleset';
@@ -349,6 +400,27 @@ export async function mountGameplay(root, {
             ? 'Storage cap reached'
             : `about ${escapeHtml(formatDuration(estimate.millisecondsUntilNext))}`}</dd></div>
         </dl>` : '';
+      const costs = owned ? upgradeCosts.filter((cost) =>
+        cost.buildingType === building.type && Number(cost.fromLevel) === Number(owned.level) &&
+        Number(cost.toLevel) === Number(owned.level) + 1) : [];
+      const missing = costs.flatMap((cost) => {
+        const required = BigInt(cost.amount);
+        const available = BigInt(balances.get(cost.assetCode) || '0');
+        return available < required
+          ? [{ ...cost, missing: (required - available).toString() }]
+          : [];
+      });
+      const upgradeMarkup = costs.length > 0 ? `
+        <div class="game-upgrade">
+          <p><strong>Level ${escapeHtml(Number(owned.level) + 1)} cost</strong>: ${costs.map((cost) =>
+            `${escapeHtml(formatAmount(cost.amount))} ${escapeHtml(cost.assetCode)}`).join(' · ')}</p>
+          <p class="${missing.length > 0 ? 'game-upgrade-missing' : 'game-upgrade-ready'}">${missing.length > 0
+            ? `Missing: ${missing.map((cost) =>
+              `${escapeHtml(formatAmount(cost.missing))} ${escapeHtml(cost.assetCode)}`).join(' · ')}`
+            : 'All collected materials available.'}</p>
+          <button class="secondary" data-action="upgrade" data-building-type="${escapeHtml(building.type)}"
+            ${view.busy || missing.length > 0 ? 'disabled' : ''}>Upgrade to Level ${escapeHtml(Number(owned.level) + 1)}</button>
+        </div>` : '';
       return `
         <article class="game-building">
           <div class="game-building-icon" aria-hidden="true">${building.icon}</div>
@@ -357,6 +429,7 @@ export async function mountGameplay(root, {
             <p>${owned ? `Level ${escapeHtml(owned.level)} · Active` : 'Not provisioned'}</p>
             <small>${production}</small>
             ${estimateMarkup}
+            ${upgradeMarkup}
           </div>
           <strong class="game-balance">${escapeHtml(formatAmount(balances.get(building.material) || '0'))}<span>collected ${building.material}</span></strong>
         </article>`;
@@ -388,7 +461,9 @@ export async function mountGameplay(root, {
     `;
 
     root.querySelectorAll('[data-action]').forEach((button) => {
-      button.addEventListener('click', () => runAction(button.dataset.action));
+      button.addEventListener('click', () => runAction(
+        button.dataset.action, button.dataset.buildingType
+      ));
     });
   }
 
@@ -412,13 +487,15 @@ export async function mountGameplay(root, {
     }
   }
 
-  async function runAction(action) {
+  async function runAction(action, buildingType) {
     if (view.busy) return;
     view.busy = true;
     view.message = action === 'collect'
       ? 'Collecting production…'
       : action === 'provision'
         ? 'Provisioning initial buildings…'
+        : action === 'upgrade'
+          ? 'Upgrading building…'
         : 'Refreshing gameplay account…';
     view.messageKind = 'info';
     render();
@@ -446,17 +523,28 @@ export async function mountGameplay(root, {
           accountId: view.accountState.accountId,
           expectedRulesFingerprint: view.accountState.ruleSet.fingerprint
         });
+      } else if (action === 'upgrade') {
+        await client.upgradeBuilding({
+          accountId: view.accountState.accountId,
+          buildingType,
+          targetLevel: 2,
+          expectedRulesFingerprint: view.accountState.ruleSet.fingerprint
+        });
       }
       const refreshed = await loadAccountState();
       if (!refreshed.ok) {
         const completedAction = action === 'collect'
           ? 'Collection completed'
+          : action === 'upgrade'
+            ? 'Building upgrade completed'
           : 'Initial buildings were provisioned';
         view.message = `${completedAction}, but account refresh failed: ${refreshed.message}`;
         view.messageKind = 'error';
       } else {
         view.message = action === 'collect'
           ? 'Idle production collected.'
+          : action === 'upgrade'
+            ? 'Building upgraded.'
           : 'Initial buildings provisioned.';
         view.messageKind = 'success';
       }

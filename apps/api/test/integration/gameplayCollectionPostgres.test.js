@@ -109,6 +109,19 @@ test('idle collection persists balances atomically, validates fingerprints, and 
     const service = new PostgresIdleCollectionService(pool);
     const activeRuleset = await service.getActiveRulesetFingerprint();
     const { ruleSetId, fingerprint } = activeRuleset;
+    assert.equal(activeRuleset.versionNumber, 2);
+    assert.equal(activeRuleset.rules.length, 10);
+    assert.equal(activeRuleset.upgradeCosts.length, 20);
+    assert.deepEqual(activeRuleset.rules.filter((rule) => rule.level === 2)
+      .map(({ building_type, units_per_hour, storage_limit_ms }) => ({
+        building_type, units_per_hour, storage_limit_ms
+      })), [
+      { building_type: 'lumber_mill', units_per_hour: 100, storage_limit_ms: 43_200_000 },
+      { building_type: 'provisioner', units_per_hour: 33, storage_limit_ms: 43_200_000 },
+      { building_type: 'quarry', units_per_hour: 66, storage_limit_ms: 43_200_000 },
+      { building_type: 'textile_mill', units_per_hour: 33, storage_limit_ms: 43_200_000 },
+      { building_type: 'wheat_farm', units_per_hour: 132, storage_limit_ms: 43_200_000 }
+    ]);
 
     const provisioned = await service.provisionInitialBuildings({
       accountId, expectedRulesFingerprint: fingerprint
@@ -124,6 +137,31 @@ test('idle collection persists balances atomically, validates fingerprints, and 
     assert.equal((await service.provisionInitialBuildings({
       accountId, expectedRulesFingerprint: fingerprint
     })).length, 5);
+
+    const unfundedAccountId = '123e4567-e89b-42d3-a456-426614174009';
+    await pool.query('INSERT INTO authenticated_accounts (id) VALUES ($1)', [unfundedAccountId]);
+    await service.provisionInitialBuildings({
+      accountId: unfundedAccountId, expectedRulesFingerprint: fingerprint
+    });
+    await assert.rejects(service.upgradeBuilding({
+      accountId: unfundedAccountId,
+      buildingType: 'wheat_farm',
+      targetLevel: 2,
+      idempotencyKey: 'upgrade-without-collected-costs',
+      expectedRulesFingerprint: fingerprint
+    }), { code: 'INSUFFICIENT_COLLECTED_BALANCE', status: 409 });
+    assert.equal((await pool.query(`
+      SELECT count(*)::integer AS count FROM building_upgrade_requests
+      WHERE account_id = $1
+    `, [unfundedAccountId])).rows[0].count, 0);
+    assert.equal((await pool.query(`
+      SELECT count(*)::integer AS count FROM game_asset_balances
+      WHERE account_id = $1
+    `, [unfundedAccountId])).rows[0].count, 0);
+    assert.equal((await pool.query(`
+      SELECT level FROM kingdom_buildings
+      WHERE account_id = $1 AND building_type = 'wheat_farm'
+    `, [unfundedAccountId])).rows[0].level, 1);
 
     await pool.query(`
       UPDATE kingdom_buildings
@@ -294,6 +332,101 @@ test('idle collection persists balances atomically, validates fingerprints, and 
     assert.equal((await pool.query('SELECT count(*)::integer AS count FROM production_settlements'))
       .rows[0].count, 15);
 
+    const wheatBeforeRollback = await pool.query(`
+      SELECT level, last_settled_at, carry_numerator FROM kingdom_buildings
+      WHERE account_id = $1 AND building_type = 'wheat_farm'
+    `, [accountId]);
+    const balancesBeforeRollback = await pool.query(`
+      SELECT asset_code, amount::text FROM game_asset_balances
+      WHERE account_id = $1 ORDER BY asset_code
+    `, [accountId]);
+    await pool.query(`
+      CREATE FUNCTION reject_building_upgrade_test() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RAISE EXCEPTION 'test upgrade ledger failure'; END;
+      $$;
+      CREATE TRIGGER reject_building_upgrade_test BEFORE INSERT ON building_upgrade_ledger
+      FOR EACH ROW EXECUTE FUNCTION reject_building_upgrade_test();
+    `);
+    await assert.rejects(service.upgradeBuilding({
+      accountId,
+      buildingType: 'wheat_farm',
+      targetLevel: 2,
+      idempotencyKey: 'upgrade-rollback',
+      expectedRulesFingerprint: fingerprint
+    }), /test upgrade ledger failure/);
+    await pool.query('DROP TRIGGER reject_building_upgrade_test ON building_upgrade_ledger');
+    await pool.query('DROP FUNCTION reject_building_upgrade_test()');
+    assert.deepEqual((await pool.query(`
+      SELECT level, last_settled_at, carry_numerator FROM kingdom_buildings
+      WHERE account_id = $1 AND building_type = 'wheat_farm'
+    `, [accountId])).rows, wheatBeforeRollback.rows);
+    assert.deepEqual((await pool.query(`
+      SELECT asset_code, amount::text FROM game_asset_balances
+      WHERE account_id = $1 ORDER BY asset_code
+    `, [accountId])).rows, balancesBeforeRollback.rows);
+    assert.equal((await pool.query(`
+      SELECT count(*)::integer AS count FROM building_upgrade_requests
+      WHERE account_id = $1 AND idempotency_key = 'upgrade-rollback'
+    `, [accountId])).rows[0].count, 0);
+
+    await pool.query(`
+      UPDATE kingdom_buildings
+      SET last_settled_at = date_trunc('milliseconds', clock_timestamp() - interval '1 hour'),
+        carry_numerator = 0
+      WHERE account_id = $1 AND building_type = 'wheat_farm'
+    `, [accountId]);
+    const upgradeInput = {
+      accountId,
+      buildingType: 'wheat_farm',
+      targetLevel: 2,
+      idempotencyKey: 'upgrade-wheat-001',
+      expectedRulesFingerprint: fingerprint
+    };
+    const [upgrade, concurrentUpgradeReplay] = await Promise.all([
+      service.upgradeBuilding(upgradeInput),
+      service.upgradeBuilding(upgradeInput)
+    ]);
+    assert.deepEqual(concurrentUpgradeReplay, upgrade);
+    assert.equal(upgrade.building.level, 2);
+    assert.equal(upgrade.settlement.amount, '60');
+    assert.deepEqual(upgrade.costs, [
+      { asset: 'cloth', amount: '60' },
+      { asset: 'food', amount: '60' },
+      { asset: 'stone', amount: '120' },
+      { asset: 'wood', amount: '180' }
+    ]);
+    assert.deepEqual(await service.upgradeBuilding(upgradeInput), upgrade);
+    await assert.rejects(service.upgradeBuilding({
+      ...upgradeInput, buildingType: 'quarry'
+    }), { code: 'IDEMPOTENCY_CONFLICT', status: 409 });
+    assert.equal((await pool.query(`
+      SELECT count(*)::integer AS count FROM building_upgrade_ledger
+      WHERE account_id = $1 AND building_type = 'wheat_farm'
+    `, [accountId])).rows[0].count, 1);
+    assert.equal((await pool.query(`
+      SELECT count(*)::integer AS count FROM building_upgrade_cost_ledger
+      WHERE account_id = $1
+    `, [accountId])).rows[0].count, 4);
+
+    const lumberRaces = await Promise.allSettled([
+      service.upgradeBuilding({
+        accountId, buildingType: 'lumber_mill', targetLevel: 2,
+        idempotencyKey: 'upgrade-lumber-a', expectedRulesFingerprint: fingerprint
+      }),
+      service.upgradeBuilding({
+        accountId, buildingType: 'lumber_mill', targetLevel: 2,
+        idempotencyKey: 'upgrade-lumber-b', expectedRulesFingerprint: fingerprint
+      })
+    ]);
+    assert.equal(lumberRaces.filter(({ status }) => status === 'fulfilled').length, 1);
+    assert.equal(lumberRaces.filter(({ status }) => status === 'rejected').length, 1);
+    assert.equal(lumberRaces.find(({ status }) => status === 'rejected').reason.code,
+      'BUILDING_UPGRADE_CONFLICT');
+    assert.equal((await pool.query(`
+      SELECT count(*)::integer AS count FROM building_upgrade_ledger
+      WHERE account_id = $1 AND building_type = 'lumber_mill'
+    `, [accountId])).rows[0].count, 1);
+
     await assert.rejects(
       pool.query(`
         UPDATE building_level_rules SET units_per_hour = units_per_hour + 1
@@ -332,8 +465,8 @@ test('idle collection persists balances atomically, validates fingerprints, and 
         ? { units_per_hour: 120, storage_limit_ms: 7_200_000 }
         : {})
     }));
-    const customFingerprint = fingerprintRules(activeRuleset.ruleSetKey, customRules, 2);
-    const customRuleSetId = 'a95b4a15-f621-4c4f-8908-12cb3e060002';
+    const customFingerprint = fingerprintRules(activeRuleset.ruleSetKey, customRules, 3);
+    const customRuleSetId = 'a95b4a15-f621-4c4f-8908-12cb3e060003';
     const activationClient = await pool.connect();
     try {
       await activationClient.query('BEGIN');
@@ -344,7 +477,7 @@ test('idle collection persists balances atomically, validates fingerprints, and 
         await activationClient.query(`
           INSERT INTO building_rule_sets
             (id, rule_set_key, version_number, fingerprint, is_active)
-          VALUES ($1, $2, 2, $3, TRUE)
+          VALUES ($1, $2, 3, $3, TRUE)
         `, [customRuleSetId, activeRuleset.ruleSetKey, customFingerprint]);
         for (const rule of customRules) {
           await activationClient.query(`
@@ -364,7 +497,7 @@ test('idle collection persists balances atomically, validates fingerprints, and 
     }
 
     const customActiveRuleset = await service.getActiveRulesetFingerprint();
-    assert.equal(customActiveRuleset.versionNumber, 2);
+    assert.equal(customActiveRuleset.versionNumber, 3);
     assert.equal(customActiveRuleset.fingerprint, customFingerprint);
     const accountOneBalancesBeforeSecondCollection = await pool.query(`
       SELECT asset_code, amount::text FROM game_asset_balances

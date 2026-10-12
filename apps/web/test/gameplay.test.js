@@ -282,6 +282,10 @@ test('gameplay errors provide distinct guidance for Passport, conflict, and rate
     code: 'PASSPORT_IDENTITY_NOT_LINKED'
   }), /not linked/);
   assert.match(gameplayErrorMessage({ status: 409 }), /conflicted/);
+  assert.match(gameplayErrorMessage({
+    status: 409,
+    code: 'INSUFFICIENT_COLLECTED_BALANCE'
+  }), /not enough collected materials/i);
   assert.match(gameplayErrorMessage({ status: 429, retryAfter: '4' }), /Retry in 4 seconds/);
 });
 
@@ -313,6 +317,65 @@ test('gameplay panel labels pending production as an estimate and keeps balances
   assert.match(root.innerHTML, /Next unit/);
   assert.match(root.innerHTML, /collected wheat/);
   assert.match(root.innerHTML, /collected balances change only after collection/i);
+});
+
+test('mixed-level rules select the owned building level for rate, cap, and estimate', async () => {
+  const root = new FakeRoot();
+  const state = accountState(accountA, fingerprintA, true);
+  state.ruleSet.rules.push({
+    buildingType: 'wheat_farm', level: 2, assetCode: 'wheat',
+    unitsPerHour: 132, storageLimitMs: 43_200_000
+  });
+  state.buildings[0].level = 2;
+
+  await mountGameplay(root, {
+    getSessionIdentity: async () => 'passport-subject-a',
+    passportFetch: async () => jsonResponse(200, state),
+    now: () => Date.parse('2026-10-12T01:00:00.000Z'),
+    setIntervalFn: () => 44,
+    clearIntervalFn: () => {}
+  });
+
+  assert.match(root.innerHTML, /Level 2 · Active/);
+  assert.match(root.innerHTML, /132 wheat\/hour · 12h storage cap/);
+  assert.match(root.innerHTML, /Pending estimate<\/dt><dd>132 wheat/);
+});
+
+test('insufficient upgrade displays costs and deficits without changing level, balances, or settlement', async () => {
+  const root = new FakeRoot();
+  const state = accountState(accountA, fingerprintA, true);
+  state.ruleSet.upgradeCosts = [
+    { buildingType: 'wheat_farm', fromLevel: 1, toLevel: 2, assetCode: 'wood', amount: '180' },
+    { buildingType: 'wheat_farm', fromLevel: 1, toLevel: 2, assetCode: 'stone', amount: '120' },
+    { buildingType: 'wheat_farm', fromLevel: 1, toLevel: 2, assetCode: 'food', amount: '60' },
+    { buildingType: 'wheat_farm', fromLevel: 1, toLevel: 2, assetCode: 'cloth', amount: '60' }
+  ];
+  state.balances = [
+    { assetCode: 'wood', amount: '1' },
+    { assetCode: 'wheat', amount: '1' }
+  ];
+  const buildingsBefore = structuredClone(state.buildings);
+  const balancesBefore = structuredClone(state.balances);
+  let calls = 0;
+
+  await mountGameplay(root, {
+    getSessionIdentity: async () => 'passport-subject-a',
+    passportFetch: async () => {
+      calls += 1;
+      return jsonResponse(200, state);
+    },
+    now: () => Date.parse('2026-10-12T01:00:00.000Z'),
+    setIntervalFn: () => 45,
+    clearIntervalFn: () => {}
+  });
+
+  assert.match(root.innerHTML, /Level 2 cost<\/strong>: 180 wood · 120 stone · 60 food · 60 cloth/);
+  assert.match(root.innerHTML, /Missing: 179 wood · 120 stone · 60 food · 60 cloth/);
+  assert.match(root.innerHTML,
+    /data-action="upgrade" data-building-type="wheat_farm"\s+disabled/);
+  assert.equal(calls, 1, 'an unaffordable upgrade must not call a mutation endpoint');
+  assert.deepEqual(state.buildings, buildingsBefore);
+  assert.deepEqual(state.balances, balancesBefore);
 });
 
 test('pending production and next-unit countdown advance without reload and stop at the storage cap', async () => {
