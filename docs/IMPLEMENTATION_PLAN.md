@@ -815,3 +815,7 @@ gameplay suite passed its single integration test, with zero failures and zero
 skips across both commands. Each harness used its repository-defined advisory
 lock and temporary-schema lifecycle; this result does not authorize production
 enablement or deployment.
+
+## Manual upgrade replay integration validation (October 12, 2026)
+
+The owner reported manually running `npm --prefix apps/api run test:gameplay:integration` against `orden_margen_gameplay_test`, with **1 passed, 0 failed, and 0 skipped**. This run exercised the successful-upgrade balance assertions and confirmed that replaying the same idempotency key does not debit costs twice. The wheat-farm UI upgrade button is separately covered by the Node DOM-harness test, which verifies the refreshed Level 2 rate and cap of `132 wheat/hour · 12h storage cap`; it is not evidence of a real-browser click.

@@ -96,13 +96,19 @@ class FakeRoot {
   set innerHTML(html) { this.html = html; }
   get innerHTML() { return this.html; }
   querySelectorAll() {
-    return [...this.html.matchAll(/<button[^>]*data-action="([^"]+)"[^>]*>/g)]
-      .map((match) => ({
-        dataset: { action: match[1] },
-        addEventListener: (event, listener) => {
-          if (event === 'click') this[`click_${match[1]}`] = listener;
-        }
-      }));
+    return [...this.html.matchAll(/<button\b[^>]*>/g)]
+      .map((match) => {
+        const action = match[0].match(/\bdata-action="([^"]+)"/);
+        if (!action) return null;
+        const buildingType = match[0].match(/\bdata-building-type="([^"]+)"/);
+        return {
+          dataset: { action: action[1], buildingType: buildingType?.[1] },
+          addEventListener: (event, listener) => {
+            if (event === 'click') this[`click_${action[1]}`] = listener;
+          }
+        };
+      })
+      .filter(Boolean);
   }
 }
 
@@ -339,6 +345,54 @@ test('mixed-level rules select the owned building level for rate, cap, and estim
   assert.match(root.innerHTML, /Level 2 · Active/);
   assert.match(root.innerHTML, /132 wheat\/hour · 12h storage cap/);
   assert.match(root.innerHTML, /Pending estimate<\/dt><dd>132 wheat/);
+});
+
+test('wheat farm upgrade button submits the action and renders the Level 2 rate and cap', async () => {
+  const root = new FakeRoot();
+  const state = accountState(accountA, fingerprintA, true);
+  const upgradeCosts = [
+    { buildingType: 'wheat_farm', fromLevel: 1, toLevel: 2, assetCode: 'wood', amount: '180' },
+    { buildingType: 'wheat_farm', fromLevel: 1, toLevel: 2, assetCode: 'stone', amount: '120' },
+    { buildingType: 'wheat_farm', fromLevel: 1, toLevel: 2, assetCode: 'food', amount: '60' },
+    { buildingType: 'wheat_farm', fromLevel: 1, toLevel: 2, assetCode: 'cloth', amount: '60' }
+  ];
+  state.ruleSet.upgradeCosts = upgradeCosts;
+  state.balances = upgradeCosts.map(({ assetCode, amount }) => ({ assetCode, amount }));
+  const calls = [];
+
+  await mountGameplay(root, {
+    getSessionIdentity: async () => 'passport-subject-a',
+    passportFetch: async (path, options) => {
+      calls.push({ path, options });
+      if (options.method === 'GET') return jsonResponse(200, state);
+
+      assert.equal(path, '/api/gameplay/idle-buildings/wheat_farm/upgrade');
+      assert.equal(options.method, 'POST');
+      assert.deepEqual(JSON.parse(options.body), {
+        expectedRulesFingerprint: fingerprintA,
+        targetLevel: 2
+      });
+      state.buildings[0].level = 2;
+      state.ruleSet.rules.push({
+        buildingType: 'wheat_farm', level: 2, assetCode: 'wheat',
+        unitsPerHour: 132, storageLimitMs: 43_200_000
+      });
+      return jsonResponse(200, { building: state.buildings[0] });
+    },
+    now: () => Date.parse('2026-10-12T01:00:00.000Z'),
+    setIntervalFn: () => 46,
+    clearIntervalFn: () => {}
+  });
+
+  assert.match(root.innerHTML,
+    /data-action="upgrade" data-building-type="wheat_farm"\s*>Upgrade to Level 2/);
+  await root.click_upgrade();
+
+  assert.equal(calls.length, 3, 'the button must submit one upgrade and then refresh state');
+  assert.equal(calls[1].options.headers['Idempotency-Key'].length > 0, true);
+  assert.match(root.innerHTML, /Level 2 · Active/);
+  assert.match(root.innerHTML, /132 wheat\/hour · 12h storage cap/);
+  assert.match(root.innerHTML, /Building upgraded\./);
 });
 
 test('insufficient upgrade displays costs and deficits without changing level, balances, or settlement', async () => {

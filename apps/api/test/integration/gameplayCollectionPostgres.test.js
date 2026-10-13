@@ -382,6 +382,10 @@ test('idle collection persists balances atomically, validates fingerprints, and 
       idempotencyKey: 'upgrade-wheat-001',
       expectedRulesFingerprint: fingerprint
     };
+    const balancesBeforeUpgrade = await pool.query(`
+      SELECT asset_code, amount::text FROM game_asset_balances
+      WHERE account_id = $1 ORDER BY asset_code
+    `, [accountId]);
     const [upgrade, concurrentUpgradeReplay] = await Promise.all([
       service.upgradeBuilding(upgradeInput),
       service.upgradeBuilding(upgradeInput)
@@ -395,7 +399,42 @@ test('idle collection persists balances atomically, validates fingerprints, and 
       { asset: 'stone', amount: '120' },
       { asset: 'wood', amount: '180' }
     ]);
-    assert.deepEqual(await service.upgradeBuilding(upgradeInput), upgrade);
+    const expectedBalancesAfterUpgrade = new Map(balancesBeforeUpgrade.rows.map(
+      ({ asset_code, amount }) => [asset_code, BigInt(amount)]
+    ));
+    expectedBalancesAfterUpgrade.set(
+      upgrade.settlement.asset,
+      (expectedBalancesAfterUpgrade.get(upgrade.settlement.asset) || 0n) +
+        BigInt(upgrade.settlement.amount)
+    );
+    for (const { asset, amount } of upgrade.costs) {
+      expectedBalancesAfterUpgrade.set(
+        asset,
+        (expectedBalancesAfterUpgrade.get(asset) || 0n) - BigInt(amount)
+      );
+    }
+    const expectedBalanceRows = [...expectedBalancesAfterUpgrade]
+      .sort(([assetA], [assetB]) => assetA.localeCompare(assetB))
+      .map(([asset_code, amount]) => ({ asset_code, amount: amount.toString() }));
+    const balancesAfterUpgrade = await pool.query(`
+      SELECT asset_code, amount::text FROM game_asset_balances
+      WHERE account_id = $1 ORDER BY asset_code
+    `, [accountId]);
+    assert.deepEqual(balancesAfterUpgrade.rows, expectedBalanceRows,
+      'the successful upgrade must settle production and debit its costs once');
+
+    const upgradeReplay = await service.upgradeBuilding(upgradeInput);
+    assert.deepEqual(upgradeReplay, upgrade);
+    const balancesAfterReplay = await pool.query(`
+      SELECT asset_code, amount::text FROM game_asset_balances
+      WHERE account_id = $1 ORDER BY asset_code
+    `, [accountId]);
+    assert.deepEqual(balancesAfterReplay.rows, balancesAfterUpgrade.rows,
+      'replaying the upgrade must not debit costs a second time');
+    assert.equal((await pool.query(`
+      SELECT count(*)::integer AS count FROM building_upgrade_requests
+      WHERE account_id = $1 AND idempotency_key = $2
+    `, [accountId, upgradeInput.idempotencyKey])).rows[0].count, 1);
     await assert.rejects(service.upgradeBuilding({
       ...upgradeInput, buildingType: 'quarry'
     }), { code: 'IDEMPOTENCY_CONFLICT', status: 409 });
