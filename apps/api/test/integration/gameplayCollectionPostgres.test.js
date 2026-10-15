@@ -6,6 +6,7 @@ const { Pool } = require('pg');
 const { createPoolConfig } = require('../../src/databaseConfig');
 const runMigrations = require('../../src/migrate');
 const { PostgresIdleCollectionService } = require('../../src/gameplay/postgresIdleCollection');
+const { PostgresTrainingGroundsService } = require('../../src/gameplay/postgresTrainingGrounds');
 const { calculateIdleProduction } = require('../../src/gameplay/idleProduction');
 const { fingerprintRules } = require('../../src/gameplay/ruleFingerprint');
 
@@ -126,6 +127,7 @@ test('idle collection persists balances atomically, validates fingerprints, and 
     const provisioned = await service.provisionInitialBuildings({
       accountId, expectedRulesFingerprint: fingerprint
     });
+
     assert.equal(provisioned.length, 5);
     const initialAccountState = await service.getAccountState({ accountId });
     assert.equal(initialAccountState.ruleSet.fingerprint, fingerprint);
@@ -606,3 +608,185 @@ test('idle collection persists balances atomically, validates fingerprints, and 
     );
 
   });
+
+test('Training Grounds persists shuffled scenarios, evaluates server-side, and awards XP exactly once',
+  { skip: skipReason }, async (t) => {
+    const pool = await isolatedDatabase(t);
+    const accountId = '123e4567-e89b-42d3-a456-426614174001';
+    await pool.query('INSERT INTO authenticated_accounts (id) VALUES ($1)', [accountId]);
+    const service = new PostgresTrainingGroundsService(pool);
+    await service.verifyReady();
+
+    const started = await service.createSession({ accountId, idempotencyKey: 'training-start-success' });
+    assert.equal(started.status, 'ACTIVE');
+    assert.equal(started.challenges.length, 5);
+    assert.equal(started.xpAwarded, 0);
+    assert.equal(started.challenges.some((challenge) =>
+      Object.hasOwn(challenge, 'correctActionId')), false);
+    for (const challenge of started.challenges) {
+      assert.equal(challenge.options.length, 3);
+      assert.equal(new Set(challenge.options.map((option) => option.id)).size, 3);
+    }
+
+    const replayedStart = await service.createSession({ accountId, idempotencyKey: 'training-start-success' });
+    assert.equal(replayedStart.sessionId, started.sessionId);
+    assert.deepEqual(replayedStart.challenges.map((challenge) => challenge.options),
+      started.challenges.map((challenge) => challenge.options));
+
+    await pool.query(`
+      UPDATE training_ground_sessions
+      SET started_at = clock_timestamp() - INTERVAL '1 minute'
+      WHERE id = $1
+    `, [started.sessionId]);
+    await pool.query(`
+      UPDATE training_ground_challenges
+      SET opens_at = clock_timestamp() - INTERVAL '30 seconds',
+          closes_at = clock_timestamp() + INTERVAL '2 minutes'
+      WHERE session_id = $1
+    `, [started.sessionId]);
+    const { rows: privateChallenges } = await pool.query(`
+      SELECT id, correct_action_id, option_order
+      FROM training_ground_challenges WHERE session_id = $1 ORDER BY ordinal
+    `, [started.sessionId]);
+
+    let finalAnswer;
+    for (const [index, challenge] of privateChallenges.entries()) {
+      const actionId = index < 4
+        ? challenge.correct_action_id
+        : challenge.option_order.find((option) => option.id !== challenge.correct_action_id).id;
+      if (index === 0) {
+        await assert.rejects(service.answer({
+          accountId,
+          sessionId: started.sessionId,
+          challengeId: challenge.id,
+          actionId: 'NOT_OFFERED_ACTION',
+          idempotencyKey: 'training-answer-not-offered'
+        }), { code: 'ACTION_NOT_OFFERED' });
+      }
+      finalAnswer = await service.answer({
+        accountId,
+        sessionId: started.sessionId,
+        challengeId: challenge.id,
+        actionId,
+        idempotencyKey: `training-answer-${index}`
+      });
+      assert.equal(finalAnswer.correct, index < 4);
+    }
+    assert.equal(finalAnswer.sessionStatus, 'COMPLETED_SUCCESS');
+    assert.equal(finalAnswer.correctCount, 4);
+    assert.equal(finalAnswer.xpAwarded, 25);
+
+    const replayedAnswer = await service.answer({
+      accountId,
+      sessionId: started.sessionId,
+      challengeId: privateChallenges[4].id,
+      actionId: finalAnswer.actionId,
+      idempotencyKey: 'training-answer-4'
+    });
+    assert.deepEqual(replayedAnswer, finalAnswer);
+    await assert.rejects(service.answer({
+      accountId,
+      sessionId: started.sessionId,
+      challengeId: privateChallenges[4].id,
+      actionId: privateChallenges[4].correct_action_id,
+      idempotencyKey: 'training-answer-4'
+    }), { code: 'IDEMPOTENCY_CONFLICT' });
+
+    const xp = await service.getCharacterXp({ accountId });
+    assert.equal(xp.lifetimeTotal, '25');
+    assert.equal((await pool.query(`
+      SELECT count(*)::integer AS count FROM character_xp_ledger
+      WHERE account_id = $1 AND source_type = 'training_grounds'
+        AND source_event_id = $2
+    `, [accountId, started.sessionId])).rows[0].count, 1);
+    await assert.rejects(pool.query(`
+      UPDATE character_xp_ledger SET xp = xp
+      WHERE account_id = $1 AND source_event_id = $2
+    `, [accountId, started.sessionId]), /training ground audit records are append-only/);
+    await assert.rejects(pool.query(`
+      DELETE FROM character_xp_ledger
+      WHERE account_id = $1 AND source_event_id = $2
+    `, [accountId, started.sessionId]), /training ground audit records are append-only/);
+    assert.deepEqual((await pool.query(`
+      SELECT starts_used, rewards_reserved, rewards_awarded
+      FROM training_ground_daily_quotas WHERE account_id = $1
+    `, [accountId])).rows[0], {
+      starts_used: 1, rewards_reserved: 0, rewards_awarded: 1
+    });
+  });
+
+test('internal Training Grounds VOID releases both reserved quotas at most once', {
+  skip: skipReason
+}, async (t) => {
+  const pool = await isolatedDatabase(t);
+  const accountId = '123e4567-e89b-42d3-a456-426614174002';
+  await pool.query('INSERT INTO authenticated_accounts (id) VALUES ($1)', [accountId]);
+  const service = new PostgresTrainingGroundsService(pool);
+  const started = await service.createSession({ accountId, idempotencyKey: 'training-start-void' });
+
+  const voidResult = await service.voidSession({
+    sessionId: started.sessionId,
+    voidCode: 'CHALLENGE_DATA_UNAVAILABLE',
+    evidenceRef: 'logs/gameplay/training/session-data-error-1',
+    serviceVersion: 'test-service-1'
+  });
+  assert.equal(voidResult.status, 'VOID');
+  await assert.rejects(service.voidSession({
+    sessionId: started.sessionId,
+    voidCode: 'CHALLENGE_DATA_UNAVAILABLE',
+    evidenceRef: 'logs/gameplay/training/session-data-error-1',
+    serviceVersion: 'test-service-1'
+  }), { code: 'SESSION_NOT_VOIDABLE' });
+
+  assert.deepEqual((await pool.query(`
+    SELECT starts_used, rewards_reserved, rewards_awarded
+    FROM training_ground_daily_quotas WHERE account_id = $1
+  `, [accountId])).rows[0], {
+    starts_used: 0, rewards_reserved: 0, rewards_awarded: 0
+  });
+  assert.deepEqual((await pool.query(`
+    SELECT start_status, reward_status
+    FROM training_ground_quota_reservations WHERE session_id = $1
+  `, [started.sessionId])).rows[0], {
+    start_status: 'RELEASED', reward_status: 'RELEASED'
+  });
+  assert.equal((await pool.query(`
+    SELECT count(*)::integer AS count FROM training_ground_void_audit WHERE session_id = $1
+  `, [started.sessionId])).rows[0].count, 1);
+  await assert.rejects(pool.query(`
+    UPDATE training_ground_void_audit SET evidence_ref = evidence_ref WHERE session_id = $1
+  `, [started.sessionId]), /training ground audit records are append-only/);
+});
+
+test('Training Grounds expiry marks missing answers and releases only the reward reservation', {
+  skip: skipReason
+}, async (t) => {
+  const pool = await isolatedDatabase(t);
+  const accountId = '123e4567-e89b-42d3-a456-426614174003';
+  await pool.query('INSERT INTO authenticated_accounts (id) VALUES ($1)', [accountId]);
+  const service = new PostgresTrainingGroundsService(pool);
+  const started = await service.createSession({ accountId, idempotencyKey: 'training-start-expiry' });
+
+  await pool.query(`
+    UPDATE training_ground_sessions
+    SET started_at = clock_timestamp() - INTERVAL '10 minutes'
+    WHERE id = $1
+  `, [started.sessionId]);
+  await pool.query(`
+    UPDATE training_ground_challenges
+    SET opens_at = clock_timestamp() - INTERVAL '2 minutes',
+        closes_at = clock_timestamp() - INTERVAL '1 second'
+    WHERE session_id = $1
+  `, [started.sessionId]);
+  const expired = await service.getSession({ accountId, sessionId: started.sessionId });
+  assert.equal(expired.status, 'EXPIRED');
+  assert.equal(expired.correctCount, 0);
+  assert.equal(expired.challenges.every((challenge) => challenge.status === 'MISSED'), true);
+  assert.equal((await service.getCharacterXp({ accountId })).lifetimeTotal, '0');
+  assert.deepEqual((await pool.query(`
+    SELECT starts_used, rewards_reserved, rewards_awarded
+    FROM training_ground_daily_quotas WHERE account_id = $1
+  `, [accountId])).rows[0], {
+    starts_used: 1, rewards_reserved: 0, rewards_awarded: 0
+  });
+});

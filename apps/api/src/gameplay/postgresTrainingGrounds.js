@@ -331,11 +331,12 @@ class PostgresTrainingGroundsService {
           INSERT INTO training_ground_challenges
             (id, session_id, ordinal, family_id, variant_id, prompt, state, option_order,
              correct_action_id, opens_at, closes_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
-            $10 + (($3 - 1) * INTERVAL '2 minutes'),
-            $10 + ($3 * INTERVAL '2 minutes'))
+          VALUES ($1, $2, $3::smallint, $4, $5, $6, $7::jsonb, $8::jsonb, $9,
+            $10::timestamptz + (($3::smallint - 1) * INTERVAL '2 minutes'),
+            $10::timestamptz + ($3::smallint * INTERVAL '2 minutes'))
         `, [randomUUID(), sessionId, challenge.ordinal, challenge.familyId, challenge.variantId,
-          challenge.prompt, challenge.state, challenge.options, challenge.correctActionId, startedAt]);
+          challenge.prompt, JSON.stringify(challenge.state), JSON.stringify(challenge.options),
+          challenge.correctActionId, startedAt]);
       }
       const reserved = await client.query(`
         UPDATE training_ground_daily_quotas
