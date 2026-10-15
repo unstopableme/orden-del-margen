@@ -203,6 +203,8 @@ or service-level transaction orchestration.
 
 ## Verification plan
 
+**Tracking state: SKIPPED.** The scenarios below remain historical, non-executable design notes. No automated simulation or PostgreSQL concurrency/locking test may be added or run until a dedicated disposable PostgreSQL integration-test environment is explicitly authorized. The repository-wide gate is recorded in `TEST_MANIFEST.md`.
+
 The supplied Python example is a behavioral simulation. It may illustrate
 dates or state transitions, but it does not verify JavaScript validation,
 Express integration, PostgreSQL constraints, transaction isolation, grants, or

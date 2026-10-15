@@ -10,6 +10,7 @@ const {
 } = require('./src/auth/immutablePassportAuth');
 const { PostgresPassportIdentityStore } = require('./src/auth/passportIdentityStore');
 const { PostgresIdleCollectionService } = require('./src/gameplay/postgresIdleCollection');
+const { PostgresTrainingGroundsService } = require('./src/gameplay/postgresTrainingGrounds');
 
 const PORT = process.env.PORT || 3000;
 
@@ -54,7 +55,11 @@ async function start() {
   const gameplayCollectionService = gameplayApiEnabled
     ? new PostgresIdleCollectionService(pool)
     : null;
+  const gameplayTrainingService = gameplayApiEnabled
+    ? new PostgresTrainingGroundsService(pool)
+    : null;
   if (gameplayCollectionService) await gameplayCollectionService.verifyReady();
+  if (gameplayTrainingService) await gameplayTrainingService.verifyReady();
 
   const app = createApp({
     pool,
@@ -63,6 +68,7 @@ async function start() {
     communityAuthenticate,
     gameplayApiEnabled,
     gameplayCollectionService,
+    gameplayTrainingService,
     gameplayAuthenticate: gameplayApiEnabled ? passportAuthenticate : null
   });
 

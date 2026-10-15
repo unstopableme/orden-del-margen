@@ -171,6 +171,22 @@ pool and cap inputs. Snapshot validation and payout persistence must make
 retries idempotent and preserve an auditable explanation of every allocation
 and retained amount.
 
+The adopted payout persistence identity is `(snapshot_id, participant_id)`,
+not `(snapshot_id, account_id)`: the participant receives the combined capped
+allocation, while the designated primary account is immutable snapshot
+evidence. A deterministic allocation key must use the canonical length-prefixed
+encoding in `IDEMPOTENCY_AND_UNIQUENESS.md`, and a separate request fingerprint
+must detect conflicting payload reuse. This remains design-only; no payout
+schema, migration, service, or job is authorized here.
+
+Before weight conversion, the future snapshot producer must apply the adopted
+`TOWER_LEVEL_3_ELIGIBILITY_CHECKER.md` contract to state effective at the
+exclusive weekly period end. It must exclude unassociated participants,
+participants without exactly one designated primary account, and participants
+whose designated primary account has not completed Tower Level 3. Contradictory
+source state must fail snapshot generation rather than being recorded as a
+zero-weight eligible participant.
+
 The original supplied JavaScript was incomplete: its `basePool` conditional was
 truncated, and validation and `totalWeight` construction were absent. The new
 pure calculator replaces that snippet and has direct tests for invalid pool
@@ -213,6 +229,11 @@ concurrent decisions and cross-account appeal attempts. Database grants must be
 verified in integration tests; application checks alone are insufficient.
 
 #### Resolve-appeal endpoint contract
+
+The adopted validation and separation contract is consolidated in
+`ADMIN_APPEAL_VALIDATION_WORKFLOW.md`. It preserves the existing route
+vocabulary and permits cases involving unassociated accounts; `participant_id`
+is case context only when a confirmed association already exists.
 
 ```http
 POST /api/admin/review-cases/:caseId/resolve-appeal
@@ -757,6 +778,12 @@ Each migration should be reversible where data safety permits and run through
 the existing migration runner, never as an untracked pgAdmin operation.
 
 ## Required verification before enabling runtime integration
+
+**Concurrency verification state: SKIPPED.** The requirements below document
+future acceptance criteria only. Do not create or run automated simulations,
+PostgreSQL concurrency tests, or database-locking tests until a dedicated
+disposable PostgreSQL integration-test environment is explicitly authorized.
+The authoritative execution boundary is `TEST_MANIFEST.md`.
 
 The isolated calculator suite covers its exported arithmetic contract. The
 following broader service, database, concurrency, and regression verification

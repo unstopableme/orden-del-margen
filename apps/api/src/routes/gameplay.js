@@ -11,6 +11,7 @@ const {
   CollectionNotProvisionedError,
   BuildingUpgradeError
 } = require('../gameplay/postgresIdleCollection');
+const { TrainingGroundsError } = require('../gameplay/postgresTrainingGrounds');
 
 const FINGERPRINT_PATTERN = /^[0-9a-f]{64}$/;
 const IDEMPOTENCY_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
@@ -44,7 +45,7 @@ function expectedRulesFingerprint(body, res) {
 
 function handleServiceError(error, res, next) {
   if (error instanceof CollectionConflictError || error instanceof CollectionNotProvisionedError ||
-      error instanceof BuildingUpgradeError) {
+      error instanceof BuildingUpgradeError || error instanceof TrainingGroundsError) {
     return res.status(error.status).json({
       error: { code: error.code, message: error.message }
     });
@@ -67,6 +68,7 @@ function toBuilding(building) {
 
 function createGameplayRouter({
   service,
+  trainingService = null,
   authenticate,
   rateLimitStore = new MemoryRateLimitStore(),
   rateLimits
@@ -78,6 +80,11 @@ function createGameplayRouter({
   }
   if (typeof authenticate !== 'function') {
     throw new TypeError('Gameplay authentication middleware is required');
+  }
+  if (trainingService && (typeof trainingService.createSession !== 'function' ||
+      typeof trainingService.answer !== 'function' || typeof trainingService.getSession !== 'function' ||
+      typeof trainingService.getCharacterXp !== 'function')) {
+    throw new TypeError('Training Grounds service is incomplete');
   }
 
   const router = express.Router();
@@ -180,6 +187,77 @@ function createGameplayRouter({
       return handleServiceError(error, res, next);
     }
   });
+
+  if (trainingService) {
+    router.post('/training-sessions', async (req, res, next) => {
+      const body = requestBody(req, res);
+      if (!body) return;
+      if (Object.keys(body).length !== 0) {
+        return invalidRequest(res, 'Training session start body must be an empty object');
+      }
+      const idempotencyKey = req.get('Idempotency-Key');
+      if (typeof idempotencyKey !== 'string' || !IDEMPOTENCY_PATTERN.test(idempotencyKey)) {
+        return invalidRequest(res, 'Idempotency-Key must contain 1-128 supported characters');
+      }
+      try {
+        return res.status(201).json(await trainingService.createSession({
+          accountId: req.callerContext?.accountId,
+          idempotencyKey
+        }));
+      } catch (error) {
+        return handleServiceError(error, res, next);
+      }
+    });
+
+    router.get('/training-sessions/:sessionId', async (req, res, next) => {
+      try {
+        return res.json(await trainingService.getSession({
+          accountId: req.callerContext?.accountId,
+          sessionId: req.params.sessionId
+        }));
+      } catch (error) {
+        return handleServiceError(error, res, next);
+      }
+    });
+
+    router.post('/training-sessions/:sessionId/answers', async (req, res, next) => {
+      const body = requestBody(req, res);
+      if (!body) return;
+      if (Object.keys(body).some((key) => !['challengeId', 'actionId'].includes(key))) {
+        return invalidRequest(res, 'Answer body may contain only challengeId and actionId');
+      }
+      if (typeof body.challengeId !== 'string' ||
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.challengeId) ||
+          typeof body.actionId !== 'string' || !/^[A-Z][A-Z0-9_]{0,63}$/.test(body.actionId)) {
+        return invalidRequest(res, 'challengeId and stable actionId are required');
+      }
+      const idempotencyKey = req.get('Idempotency-Key');
+      if (typeof idempotencyKey !== 'string' || !IDEMPOTENCY_PATTERN.test(idempotencyKey)) {
+        return invalidRequest(res, 'Idempotency-Key must contain 1-128 supported characters');
+      }
+      try {
+        return res.json(await trainingService.answer({
+          accountId: req.callerContext?.accountId,
+          sessionId: req.params.sessionId,
+          challengeId: body.challengeId,
+          actionId: body.actionId,
+          idempotencyKey
+        }));
+      } catch (error) {
+        return handleServiceError(error, res, next);
+      }
+    });
+
+    router.get('/character-xp', async (req, res, next) => {
+      try {
+        return res.json(await trainingService.getCharacterXp({
+          accountId: req.callerContext?.accountId
+        }));
+      } catch (error) {
+        return handleServiceError(error, res, next);
+      }
+    });
+  }
 
   return router;
 }

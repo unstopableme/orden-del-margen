@@ -35,6 +35,7 @@ function createApp({
   communityAuthenticate,
   gameplayApiEnabled = configuredGameplayApiEnabled(),
   gameplayCollectionService = null,
+  gameplayTrainingService = null,
   gameplayAuthenticate = null
 } = {}) {
 if (typeof gameplayApiEnabled !== 'boolean') {
@@ -91,6 +92,7 @@ if (gameplayApiEnabled) {
   const { createGameplayRouter } = require('./routes/gameplay');
   app.use('/api/gameplay', createGameplayRouter({
     service: gameplayCollectionService,
+    trainingService: gameplayTrainingService,
     authenticate: gameplayAuthenticate,
     rateLimitStore,
     rateLimits

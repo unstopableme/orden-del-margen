@@ -14,7 +14,8 @@ claims.
 
 - [x] Member profile with display name, handle, bio, and role
 - [x] User-controlled presence/status
-- [ ] Persistent authentication and account recovery
+- [x] Server-verified opaque session authentication and ownership enforcement
+- [ ] Identity-provider integration and account recovery
 - [ ] Member directory with privacy controls
 
 ### Community participation
@@ -25,7 +26,11 @@ claims.
 - [x] Member-owned profile topics
 - [x] Points and badge progression
 - [x] Community quests that award points when resolved
+- [x] Runtime behavior: each community quest can be resolved once globally
+  (`status`, `resolved_by`, and `resolved_at` are singular). Product approval
+  of this rule remains pending.
 - [x] Knowledge-based PvP scoring
+- [x] PostgreSQL persistence and duplicate-reward protection for implemented community rewards
 - [x] Non-monetary coffee appreciation gifts
 - [ ] Events and participation check-ins
 - [ ] Discussion threads and reporting
@@ -39,8 +44,7 @@ claims.
 
 ## Next phase: trusted operations
 
-- Persistent PostgreSQL repositories for community data
-- Authentication, role-based authorization, and account recovery
+- Identity-provider-backed sessions, role-based moderation, and account recovery
 - Moderation tools and an audit trail
 - Participant-review cases with reviewer-only decisions, account-owner appeals,
   immutable history, and separately audited association creation

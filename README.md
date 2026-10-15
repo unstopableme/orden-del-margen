@@ -12,6 +12,21 @@ Related design documents:
 - [Economy](docs/ECONOMY.md) — confirmed economic direction, proposed commercial models, and unresolved mechanics
 - [Roadmap](docs/ROADMAP.md) — implemented MVP scope and future delivery phases
 - [Decision register](docs/DECISIONS.md) — confirmed decisions, proposals, and open questions
+- [Test suite manifest](docs/TEST_MANIFEST.md) — runnable suites, skipped concurrency coverage, and the PostgreSQL authorization gate
+- [Payout idempotency and uniqueness](docs/IDEMPOTENCY_AND_UNIQUENESS.md) — adopted, implementation-deferred storage contract
+- [Payout idempotency API errors](docs/API_IDEMPOTENCY_ERROR_HANDLING.md) — proposed replay and conflict response contract
+- [Tower Level 3 eligibility checker](docs/TOWER_LEVEL_3_ELIGIBILITY_CHECKER.md) — adopted snapshot-time reward gate
+- [Administrative appeal validation](docs/ADMIN_APPEAL_VALIDATION_WORKFLOW.md) — adopted unmounted review workflow contract
+- [Materials manifest schema](docs/MATERIALS_MANIFEST_SCHEMA.md) — offline catalog attribute and validation specification
+- [Gameplay proposals supplement](docs/04_gameplay_proposals_supplement.md) — consolidated offline combat, loot, crafting, and overlay candidates
+- [Faction selection onboarding sheets](docs/11_faction_selection_sheets.md) — offline character-alignment lore and interface-string proposal
+- [Weapon upgrade crafting logs](docs/13_weapon_upgrade_crafting_logs.md) — offline historical forging-log layout and string proposal
+- [Game quest log descriptions](docs/14_game_quest_log_descriptions.md) — offline quest-story, layout, and localization proposal
+- [Character skill tree descriptions](docs/15_character_skill_tree_descriptions.md) — offline specialization-tree, modifier, and interface-string proposal
+- [Combat loot-table weights](docs/16_combat_loot_table_weights.md) — offline drop-weight layout and localization proposal
+- [Master documentation roadmap](docs/09_master_roadmap.md) — offline structural asset inventory and status map
+- [Primary-account onboarding UI](docs/10_primary_account_onboarding_ui.md) — offline account and designation interface proposal
+- [User settings account summary](docs/12_user_settings_account_summary.md) — offline privacy-safe profile summary proposal
 
 ## MVP
 

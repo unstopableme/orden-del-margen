@@ -41,12 +41,14 @@ function trustedTestCaller(req, res, next) {
 
 function enabledApp(service, authenticate = authenticatedCaller, {
   rateLimitStore = new MemoryRateLimitStore(),
-  rateLimits
+  rateLimits,
+  trainingService = null
 } = {}) {
   return createApp({
     pool: {},
     gameplayApiEnabled: true,
     gameplayCollectionService: service,
+    gameplayTrainingService: trainingService,
     gameplayAuthenticate: authenticate,
     rateLimitStore,
     rateLimits
@@ -366,4 +368,72 @@ test('gameplay collection maps idempotency conflicts to HTTP 409', async (t) => 
   });
   assert.equal(response.status, 409);
   assert.equal((await response.json()).error.code, 'IDEMPOTENCY_CONFLICT');
+});
+
+test('Training Grounds routes are authenticated and expose no VOID operation', async (t) => {
+  const calls = [];
+  const collectionService = {
+    async getAccountState() { return null; },
+    async provisionInitialBuildings() { return []; },
+    async collect() { return {}; }
+  };
+  const trainingService = {
+    async createSession(input) { calls.push(['create', input]); return { sessionId: 'session-1' }; },
+    async answer(input) { calls.push(['answer', input]); return { correct: true }; },
+    async getSession(input) { calls.push(['get', input]); return { sessionId: input.sessionId }; },
+    async getCharacterXp(input) { calls.push(['xp', input]); return { lifetimeTotal: '25' }; }
+  };
+  const baseUrl = await withServer(t, enabledApp(collectionService, trustedTestCaller, {
+    trainingService
+  }));
+
+  const started = await fetch(`${baseUrl}/api/gameplay/training-sessions`, {
+    method: 'POST',
+    headers: {
+      Authorization: '******',
+      'Content-Type': 'application/json',
+      'Idempotency-Key': 'start-1'
+    },
+    body: '{}'
+  });
+  assert.equal(started.status, 201);
+  assert.deepEqual(await started.json(), { sessionId: 'session-1' });
+  assert.deepEqual(calls[0], ['create', { accountId, idempotencyKey: 'start-1' }]);
+
+  const sessionRead = await fetch(`${baseUrl}/api/gameplay/training-sessions/session-1`);
+  assert.equal(sessionRead.status, 200);
+  assert.deepEqual(await sessionRead.json(), { sessionId: 'session-1' });
+  assert.deepEqual(calls[1], ['get', { accountId, sessionId: 'session-1' }]);
+
+  const challengeId = '123e4567-e89b-42d3-a456-426614174098';
+  const answer = await fetch(`${baseUrl}/api/gameplay/training-sessions/session-1/answers`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Idempotency-Key': 'answer-1'
+    },
+    body: JSON.stringify({ challengeId, actionId: 'PROTECT_ALLY' })
+  });
+  assert.equal(answer.status, 200);
+  assert.deepEqual(await answer.json(), { correct: true });
+  assert.deepEqual(calls[2], ['answer', {
+    accountId,
+    sessionId: 'session-1',
+    challengeId,
+    actionId: 'PROTECT_ALLY',
+    idempotencyKey: 'answer-1'
+  }]);
+
+  const xp = await fetch(`${baseUrl}/api/gameplay/character-xp`);
+  assert.equal(xp.status, 200);
+  assert.deepEqual(await xp.json(), { lifetimeTotal: '25' });
+  assert.deepEqual(calls[3], ['xp', { accountId }]);
+
+  const voidResponse = await fetch(`${baseUrl}/api/gameplay/training-sessions/session-1/void`, {
+    method: 'POST',
+    headers: { Authorization: '******', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ voidCode: 'SERVER_ABORTED_SESSION' })
+  });
+  assert.equal(voidResponse.status, 404);
+  assert.equal(calls.length, 4);
 });
