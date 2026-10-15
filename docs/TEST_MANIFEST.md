@@ -11,9 +11,13 @@ This file is the authoritative inventory and execution boundary for automated te
 | Administrative transaction fallback | `apps/api/test/admin/transactionFallback.test.js` | READY | Contract/fallback behavior only; not a PostgreSQL transaction test |
 | Idle-production arithmetic | `apps/api/test/gameplay/idleProduction.test.js` | READY | Pure deterministic calculator; no route, clock service, or database |
 | Idle collection planning | `apps/api/test/gameplay/idleCollection.test.js` | READY | Pure batch settlement, ownership consistency, asset aggregation, ledger reconciliation, carry restoration, and input preservation; no authentication, database, transaction, or route |
+| Idle collection rules and persistence | `apps/api/test/gameplay/ruleFingerprint.test.js`, `apps/api/test/gameplay/idleProduction.test.js`, `apps/api/test/integration/gameplayCollectionPostgres.test.js` (`npm --prefix apps/api run test:gameplay:integration`) | READY WHEN CONFIGURED; MANUAL PASS REPORTED | Deterministic rules/request fingerprints and migration seed are unit-tested; calculator accepts persisted ruleset rates/caps; guarded PostgreSQL suite covers custom rules, account isolation, different-key concurrent collection without double credit, append-only settlements/ledger, idempotent replay, fingerprint rejection/tampering, and transaction rollback in an isolated schema. The owner reports one top-level integration test passed against `orden_margen_gameplay_test`; see the manual execution record below. |
 | Weekly payout arithmetic | `apps/api/test/gameplay/weeklyPayout.test.js` | READY | Pure deterministic allocator; no snapshot, job, ledger, or database |
 | Community authentication and authorization | `apps/api/test/community/communityAuthorization.test.js` | READY | Route-level 401/403, ownership, membership, and no-mutation assertions |
-| Immutable Passport authentication | `apps/api/test/community/immutablePassportAuth.test.js` | READY | Offline RSA/JWKS verification, audience/expiry checks, server-owned identity mapping, authenticated property-route behavior, and distinct `503 AUTH_PROVIDER_UNAVAILABLE` handling for JWKS-provider failures versus `401 UNAUTHORIZED` for invalid tokens |
+| Immutable Passport authentication | `apps/api/test/community/immutablePassportAuth.test.js` | READY | Offline RSA/JWKS verification, audience/expiry checks, server-owned account/member identity mapping, authenticated property-route behavior, and distinct `503 AUTH_PROVIDER_UNAVAILABLE` handling for JWKS-provider failures versus `401 UNAUTHORIZED` for invalid tokens |
+| Persistent authenticated account mapping | `apps/api/test/auth/passportIdentityStore.test.js`, `apps/api/test/integration/communityPostgres.test.js` | READY WHEN CONFIGURED | Transaction behavior and migration shape have mock-backed unit coverage; the gated PostgreSQL test verifies stable account creation, issuer scoping, and revoked-binding denial in an isolated schema |
+| Gameplay route isolation | `apps/api/test/gameplay/gameplayRoutesDisabled.test.js` | READY | Community demo dashboard remains available with in-memory storage and gameplay endpoints remain unmounted |
+| Authenticated gameplay query/collection routes | `apps/api/src/routes/gameplay.js`, `apps/api/test/gameplay/gameplayRoutes.test.js`, `apps/api/test/gameplay/gameplayRoutesDisabled.test.js` | IMPLEMENTED; ROUTE CONTRACT TESTS | Account-scoped query, explicit initial-building provisioning, and collection use Immutable Passport caller context; gameplay has separate IP-before-authentication and shared per-account limits, with 429/no-service-call and invalid-body/fingerprint/idempotency coverage. Mounting requires PostgreSQL and `GAMEPLAY_API_ENABLED=true`, which defaults to false. Tests use injected authentication and do not validate enabled server startup against live PostgreSQL/JWKS. |
 | Community duplicate rewards | `apps/api/test/community/communityRewards.test.js` | READY | In-memory retry and concurrent-request coverage with exact point totals |
 | Community CORS | `apps/api/test/cors.test.js` | READY | Allowed/rejected origins, preflight, and authentication independence |
 | Database TLS and operation safety | `apps/api/test/databaseConfig.test.js`, `apps/api/test/configurationSecurity.test.js` | READY | Certificate verification, unsafe URL rejection, explicit target confirmation, production demo guards, and trusted-proxy validation |
@@ -38,25 +42,74 @@ This file is the authoritative inventory and execution boundary for automated te
 
 `npm test` discovers the existing `*.test.js` files through Node's test runner. The skipped categories have no executable files and are not silently included in that command.
 
+### Local targeted execution (October 11, 2026)
+
+Ran the gameplay route-contract, disabled-route, Immutable Passport, and CORS
+tests with `npm --prefix apps/api test -- test/gameplay/gameplayRoutes.test.js
+test/gameplay/gameplayRoutesDisabled.test.js
+test/community/immutablePassportAuth.test.js test/cors.test.js`: **18 passed,
+0 failed, 0 skipped**. These HTTP/authentication tests use local fakes/offline
+keys and do not connect to PostgreSQL or validate a live Passport/JWKS service.
+
 ## Authorization gate
 
 The project owner authorized the narrowly scoped community PostgreSQL tests on
 October 6, 2026. They require explicit disposable-database confirmation,
 validate the URL database name against `TEST_DATABASE_EXPECTED_NAME`, and
-isolate each run in a temporary schema. They never load the API `.env` or use
-`DATABASE_URL`; absent all confirmations, the tests are skipped. The
-authorization gate below remains in force for the unrelated payout, gameplay,
-and administrative categories:
+isolate each run in a temporary schema. On October 11, 2026, the owner
+separately authorized the idle-collection gameplay PostgreSQL suite, restricted
+to a newly created, dedicated disposable gameplay test database. It requires
+`GAMEPLAY_TEST_DATABASE_URL`, `GAMEPLAY_TEST_DATABASE_PURPOSE=disposable`, and
+an exact `GAMEPLAY_TEST_DATABASE_EXPECTED_NAME` containing both `gameplay` and
+`test`; it additionally refuses a target whose `public` schema already has
+tables. Run it with `npm --prefix apps/api run test:gameplay:integration`.
+Supply the URL only in the local test process; do not persist it in Windows
+user or machine environment variables. Both suites use temporary schemas, do
+not load the API `.env`, and do not use `DATABASE_URL`; missing confirmations
+skip the suite. Neither
+authorization permits tests against an application database. Authorization
+for the idle-collection suite is limited to that dedicated, guarded harness;
+it does not authorize unrelated payout, Tower, broad gameplay, or
+administrative persistence/concurrency categories:
 
-- do not create or run concurrency simulation runners;
-- do not create or run database row-locking, deadlock, isolation, or rollback tests;
+- do not create or run broad concurrency simulations or tests for unrelated gameplay systems;
+- do not create or run deadlock/isolation tests or unrelated database locking/rollback tests;
 - do not point tests at developer, staging, or production databases;
-- keep proposed PostgreSQL scenarios as non-executable documentation only;
+- keep unrelated proposed PostgreSQL scenarios as non-executable documentation only;
 - do not interpret **SKIPPED** as failed, pending execution, or permission to scaffold a harness.
 
 After authorization, the environment must be disposable and isolated, apply production migrations, use least-privilege application roles where relevant, and have an explicit teardown boundary before any skipped category can move to READY.
 
-## Missing service definitions found during inspection
+### User-reported manual execution (October 11, 2026)
+
+The project owner reports running `npm --prefix apps/api run test:integration`
+against the dedicated disposable database
+`orden_margen_passport_test_20261011_7fd1`: **5 passed, 0 failed, 0 skipped**.
+The output was not independently captured or verified in this session. The
+guarded harness applies migrations only in its isolated temporary schemas and
+removes those schemas during teardown; it does not drop the test database.
+This report validates only the existing community PostgreSQL integration suite,
+not the separately skipped concurrency, payout, gameplay, or administrative
+categories.
+
+### User-reported manual gameplay execution (October 11, 2026)
+
+The project owner reports running
+`npm --prefix apps/api run test:gameplay:integration` against the newly created,
+dedicated disposable database `orden_margen_gameplay_test`: **1 passed, 0
+failed, 0 skipped**. The owner subsequently reports a successful manual rerun
+after correcting the account-state balance expectation; the output was not
+captured or independently verified in this session. The one top-level
+PostgreSQL test covers the approved prototype rules, custom persisted
+rates/caps, the complete five-material balance response, account isolation,
+different-key concurrent collection without double credit, idempotent replay,
+fingerprint rejection/tampering, append-only settlement and ledger
+enforcement, and transaction rollback. The result does not validate
+authenticated gameplay HTTP routes, rate limiting, or feature-flag behavior.
+The guarded harness uses an isolated temporary schema and leaves the dedicated
+test database in place.
+
+## Missing service definitions found during initial inspection
 
 These are structural findings, not authorization to implement them.
 
@@ -64,12 +117,22 @@ These are structural findings, not authorization to implement them.
 | --- | --- | --- |
 | Appeal resolution | `src/admin/adminRouter.js` and `src/admin/adminVerification.js` | Transaction-owning `reviewService.resolveAppeal`, reviewer authentication/authorization, error mapping, persistence schema/migrations, idempotency storage, append-only history enforcement, and composition-root mounting |
 | Participant verification and primary-account switching | Design documents only | Provider adapter, credential validation, review workflow, switch orchestration, scheduler/worker, persistence model, audit service, and mounted API |
-| Idle production | `src/gameplay/idleProduction.js` pure calculator | Authenticated collection service, authoritative clock, persistence/ledger, idempotency, transaction ownership, gameplay route, and feature-flagged mounting |
+| Idle production | `apps/api/src/gameplay/idleProduction.js`, `apps/api/src/gameplay/postgresIdleCollection.js`; PostgreSQL schema and transaction-owned collection are implemented for the approved prototype rules and the owner reports a passing run of the guarded PostgreSQL suite | Authenticated account query/collection routes, route-level authentication integration, explicit feature-flagged mounting, and route-level tests remain deferred; gameplay routes stay unmounted |
 | Tower upgrades | Design documents only | Approved rule source, transaction-owning upgrade service or explicitly approved database function, models/schema, ledger, route, and feature-flagged mounting |
 | Weekly rewards | `src/gameplay/weeklyPayout.js` pure calculator | Deterministic weight converter, immutable snapshot service, eligibility aggregation, payout persistence, idempotent scheduled job, audit trail, and API/operations surface |
-| Community MVP | Authenticated router, Immutable Passport JWT adapter, server-owned wallet/property mapping, in-memory demo data, and PostgreSQL persistence adapter | Trusted identity-link provisioning, local session revocation, moderation service, and operational observability |
+| Community MVP | Authenticated router, Immutable Passport JWT adapter, canonical authenticated accounts and issuer/subject mapping, server-owned wallet/property mapping, in-memory demo data, and PostgreSQL persistence adapter | Trusted identity-link provisioning, local session revocation, moderation service, and operational observability |
 
-The existing administrative router is intentionally unmounted, and the gameplay calculators are intentionally unreachable from HTTP. The current API composition root mounts only the community routes and, when `DATABASE_URL` is present, the internal property/acquisition routes.
+**Current gameplay status:** the authenticated idle query, explicit
+provisioning, and collection routes have since been implemented locally behind
+the disabled-by-default feature flag. The table's route deferral entry above is
+historical; the live database/query assertions and enabled server startup still
+need validation.
+
+The administrative router remains intentionally unmounted. Gameplay routes
+mount only when `GAMEPLAY_API_ENABLED=true`, PostgreSQL is configured, and
+Immutable Passport authentication is available; the flag defaults to false.
+The composition root also mounts the community routes and, when `DATABASE_URL`
+is present, the internal property/acquisition routes.
 
 ## Static document asset review
 
@@ -146,3 +209,16 @@ commands. The community harness used its `community_*` temporary schemas and
 advisory lock; the gameplay harness additionally verified an empty `public`
 schema before and after running migrations in its `gameplay_idle_*` temporary
 schema. No production system was targeted and nothing was published.
+
+### Prototype upgrade PostgreSQL execution (October 12, 2026)
+
+The guarded gameplay integration suite was rerun manually against the
+authorized disposable gameplay database after correcting the concurrent
+N1-to-N2 upgrade lock order. The single integration test completed with
+**1 passed, 0 failed, and 0 skipped**. This run retained the concurrent
+different-key assertion that exactly one upgrade succeeds and the other
+returns `BUILDING_UPGRADE_CONFLICT`; it did not accept PostgreSQL `40P01` as
+an expected result. The same run covered transactional rollback, same-key
+replay, single debit/ledger persistence, Level 1 settlement before upgrade,
+and preservation of carry. No production system was targeted and nothing was
+published.
