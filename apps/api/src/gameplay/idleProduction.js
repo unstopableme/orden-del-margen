@@ -68,15 +68,36 @@ function calculateIdleProduction({
   level,
   lastSettledAt,
   settledAt,
-  carryNumerator = '0'
+  carryNumerator = '0',
+  productionRule
 } = {}) {
-  if (typeof buildingType !== 'string' || !Object.hasOwn(PRODUCTION_RULES, buildingType)) {
-    throw new RangeError(`unsupported building type: ${String(buildingType)}`);
-  }
-  const rule = PRODUCTION_RULES[buildingType];
-
-  if (!Number.isInteger(level) || !Object.hasOwn(rule.rates, level)) {
-    throw new RangeError(`unsupported level ${String(level)} for ${buildingType}`);
+  let asset;
+  let hourlyRate;
+  let capacityMilliseconds;
+  if (productionRule === undefined) {
+    if (typeof buildingType !== 'string' || !Object.hasOwn(PRODUCTION_RULES, buildingType)) {
+      throw new RangeError(`unsupported building type: ${String(buildingType)}`);
+    }
+    const rule = PRODUCTION_RULES[buildingType];
+    if (!Number.isInteger(level) || !Object.hasOwn(rule.rates, level)) {
+      throw new RangeError(`unsupported level ${String(level)} for ${buildingType}`);
+    }
+    asset = rule.asset;
+    hourlyRate = rule.rates[level];
+    capacityMilliseconds = STORAGE_LIMIT_MILLISECONDS[level];
+  } else {
+    if (!Number.isInteger(level) || level < 1) {
+      throw new RangeError(`unsupported level ${String(level)} for ${buildingType}`);
+    }
+    if (!productionRule || typeof productionRule !== 'object' ||
+        typeof productionRule.asset !== 'string' || !productionRule.asset ||
+        !Number.isSafeInteger(productionRule.unitsPerHour) || productionRule.unitsPerHour <= 0 ||
+        !Number.isSafeInteger(productionRule.storageLimitMs) || productionRule.storageLimitMs < 0) {
+      throw new TypeError('productionRule must contain an asset, positive hourly rate, and nonnegative storage limit');
+    }
+    asset = productionRule.asset;
+    hourlyRate = productionRule.unitsPerHour;
+    capacityMilliseconds = productionRule.storageLimitMs;
   }
 
   const startMilliseconds = parseTimestamp(lastSettledAt, 'lastSettledAt');
@@ -87,21 +108,19 @@ function calculateIdleProduction({
 
   const previousCarry = parseCarryNumerator(carryNumerator);
   const elapsedMilliseconds = endMilliseconds - startMilliseconds;
-  const capacityMilliseconds = STORAGE_LIMIT_MILLISECONDS[level];
   const activeMilliseconds = Math.min(elapsedMilliseconds, capacityMilliseconds);
   const discardedMilliseconds = elapsedMilliseconds - activeMilliseconds;
-  const hourlyRate = BigInt(rule.rates[level]);
-  const accruedNumerator = BigInt(activeMilliseconds) * hourlyRate;
+  const accruedNumerator = BigInt(activeMilliseconds) * BigInt(hourlyRate);
   const availableNumerator = previousCarry + accruedNumerator;
   const producedUnits = availableNumerator / CARRY_DENOMINATOR;
   const nextCarry = availableNumerator % CARRY_DENOMINATOR;
 
   return Object.freeze({
-    asset: rule.asset,
+    asset,
     producedUnits: producedUnits.toString(),
     carryNumerator: nextCarry.toString(),
     carryDenominator: CARRY_DENOMINATOR.toString(),
-    hourlyRate: rule.rates[level],
+    hourlyRate,
     activeMilliseconds,
     discardedMilliseconds,
     lastSettledAt: settledAt

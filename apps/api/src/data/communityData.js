@@ -134,6 +134,10 @@ const knowledgeChallenges = [
   }
 ];
 
+// A member can earn points from a given knowledge challenge only once.
+// Incorrect answers are not recorded as rewards and may be retried.
+const knowledgeAwards = [];
+
 const announcements = [
   {
     id: 'announcement-1',
@@ -192,6 +196,7 @@ module.exports = {
   coffeeGifts,
   communities,
   knowledgeChallenges,
+  knowledgeAwards,
   members,
   properties,
   progressionEvents,
