@@ -25,6 +25,13 @@ function configuredGameplayApiEnabled(environment = process.env) {
   throw new Error('GAMEPLAY_API_ENABLED must be true or false');
 }
 
+function configuredEconomyApiEnabled(environment = process.env) {
+  const value = environment.ECONOMY_API_ENABLED;
+  if (value === undefined || value === 'false') return false;
+  if (value === 'true') return true;
+  throw new Error('ECONOMY_API_ENABLED must be true or false');
+}
+
 function createApp({
   pool = defaultPool,
   communityPersistence = null,
@@ -36,7 +43,10 @@ function createApp({
   gameplayApiEnabled = configuredGameplayApiEnabled(),
   gameplayCollectionService = null,
   gameplayTrainingService = null,
-  gameplayAuthenticate = null
+  gameplayAuthenticate = null,
+  economyApiEnabled = configuredEconomyApiEnabled(),
+  economyService = null,
+  economyAuthenticate = null
 } = {}) {
 if (typeof gameplayApiEnabled !== 'boolean') {
   throw new TypeError('gameplayApiEnabled must be a boolean');
@@ -46,6 +56,15 @@ if (gameplayApiEnabled && !pool) {
 }
 if (gameplayApiEnabled && (!gameplayCollectionService || !gameplayAuthenticate)) {
   throw new Error('GAMEPLAY_API_ENABLED requires the gameplay service and authenticated middleware');
+}
+if (typeof economyApiEnabled !== 'boolean') {
+  throw new TypeError('economyApiEnabled must be a boolean');
+}
+if (economyApiEnabled && !pool) {
+  throw new Error('ECONOMY_API_ENABLED requires PostgreSQL');
+}
+if (economyApiEnabled && (!economyService || !economyAuthenticate)) {
+  throw new Error('ECONOMY_API_ENABLED requires the economy service and authenticated middleware');
 }
 
 const app = express();
@@ -99,6 +118,14 @@ if (gameplayApiEnabled) {
   }));
 }
 
+if (economyApiEnabled) {
+  const { createEconomyRouter } = require('./economy/economy.routes');
+  app.use('/api/economy', createEconomyRouter({
+    service: economyService,
+    authenticate: economyAuthenticate
+  }));
+}
+
 app.use('/api/community', createCommunityRouter({
   persistence: communityPersistence,
   rateLimitStore,
@@ -132,3 +159,4 @@ module.exports.createApp = createApp;
 module.exports.configuredOrigins = configuredOrigins;
 module.exports.configuredTrustProxy = configuredTrustProxy;
 module.exports.configuredGameplayApiEnabled = configuredGameplayApiEnabled;
+module.exports.configuredEconomyApiEnabled = configuredEconomyApiEnabled;

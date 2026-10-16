@@ -1,4 +1,4 @@
-const { createApp, configuredGameplayApiEnabled } = require('./src/app');
+const { createApp, configuredEconomyApiEnabled, configuredGameplayApiEnabled } = require('./src/app');
 const pool = require('./src/db');
 const communityData = require('./src/data/communityData');
 const { PostgresCommunityPersistence } = require('./src/data/postgresCommunityPersistence');
@@ -11,13 +11,16 @@ const {
 const { PostgresPassportIdentityStore } = require('./src/auth/passportIdentityStore');
 const { PostgresIdleCollectionService } = require('./src/gameplay/postgresIdleCollection');
 const { PostgresTrainingGroundsService } = require('./src/gameplay/postgresTrainingGrounds');
+const { MarketplaceService } = require('./src/economy/marketplaceService');
+const { PostgresMarketplace } = require('./src/economy/queries/postgresMarketplace');
 
 const PORT = process.env.PORT || 3000;
 
 async function start() {
   const gameplayApiEnabled = configuredGameplayApiEnabled(process.env);
-  if (gameplayApiEnabled && !pool) {
-    throw new Error('GAMEPLAY_API_ENABLED requires PostgreSQL');
+  const economyApiEnabled = configuredEconomyApiEnabled(process.env);
+  if ((gameplayApiEnabled || economyApiEnabled) && !pool) {
+    throw new Error('Enabled gameplay and economy APIs require PostgreSQL');
   }
   let communityPersistence = null;
   let rateLimitStore = new MemoryRateLimitStore();
@@ -31,7 +34,7 @@ async function start() {
 
   const authMode = process.env.COMMUNITY_AUTH_MODE || 'configured';
   let passportAuthenticate;
-  if (authMode === 'immutable-passport' || gameplayApiEnabled) {
+  if (authMode === 'immutable-passport' || gameplayApiEnabled || economyApiEnabled) {
     if (!pool) throw new Error('Immutable Passport authentication requires PostgreSQL');
     const identityStore = new PostgresPassportIdentityStore(pool);
     await identityStore.verifyReady();
@@ -60,6 +63,10 @@ async function start() {
     : null;
   if (gameplayCollectionService) await gameplayCollectionService.verifyReady();
   if (gameplayTrainingService) await gameplayTrainingService.verifyReady();
+  const economyService = economyApiEnabled
+    ? new MarketplaceService(new PostgresMarketplace(pool))
+    : null;
+  if (economyService) await economyService.verifyReady();
 
   const app = createApp({
     pool,
@@ -69,7 +76,10 @@ async function start() {
     gameplayApiEnabled,
     gameplayCollectionService,
     gameplayTrainingService,
-    gameplayAuthenticate: gameplayApiEnabled ? passportAuthenticate : null
+    gameplayAuthenticate: gameplayApiEnabled ? passportAuthenticate : null,
+    economyApiEnabled,
+    economyService,
+    economyAuthenticate: economyApiEnabled ? passportAuthenticate : null
   });
 
   const server = app.listen(PORT, () => {
