@@ -1,4 +1,9 @@
-const { createApp, configuredEconomyApiEnabled, configuredGameplayApiEnabled } = require('./src/app');
+const {
+  createApp,
+  configuredEconomyApiEnabled,
+  configuredGameplayApiEnabled,
+  configuredOrganizationProfileApiEnabled
+} = require('./src/app');
 const pool = require('./src/db');
 const communityData = require('./src/data/communityData');
 const { PostgresCommunityPersistence } = require('./src/data/postgresCommunityPersistence');
@@ -9,6 +14,10 @@ const {
   passportConfiguration
 } = require('./src/auth/immutablePassportAuth');
 const { PostgresPassportIdentityStore } = require('./src/auth/passportIdentityStore');
+const {
+  authorizeOrganizationProfile,
+  verifyOrganizationMembershipSchema
+} = require('./src/auth/organizationAuthorization');
 const { PostgresIdleCollectionService } = require('./src/gameplay/postgresIdleCollection');
 const { PostgresTrainingGroundsService } = require('./src/gameplay/postgresTrainingGrounds');
 const { MarketplaceService } = require('./src/economy/marketplaceService');
@@ -19,8 +28,9 @@ const PORT = process.env.PORT || 3000;
 async function start() {
   const gameplayApiEnabled = configuredGameplayApiEnabled(process.env);
   const economyApiEnabled = configuredEconomyApiEnabled(process.env);
-  if ((gameplayApiEnabled || economyApiEnabled) && !pool) {
-    throw new Error('Enabled gameplay and economy APIs require PostgreSQL');
+  const organizationProfileApiEnabled = configuredOrganizationProfileApiEnabled(process.env);
+  if ((gameplayApiEnabled || economyApiEnabled || organizationProfileApiEnabled) && !pool) {
+    throw new Error('Enabled gameplay, economy, and organization profile APIs require PostgreSQL');
   }
   let communityPersistence = null;
   let rateLimitStore = new MemoryRateLimitStore();
@@ -32,9 +42,13 @@ async function start() {
     await rateLimitStore.verifyReady();
   }
 
+  if (organizationProfileApiEnabled) {
+    await verifyOrganizationMembershipSchema(pool);
+  }
+
   const authMode = process.env.COMMUNITY_AUTH_MODE || 'configured';
   let passportAuthenticate;
-  if (authMode === 'immutable-passport' || gameplayApiEnabled || economyApiEnabled) {
+  if (authMode === 'immutable-passport' || gameplayApiEnabled || economyApiEnabled || organizationProfileApiEnabled) {
     if (!pool) throw new Error('Immutable Passport authentication requires PostgreSQL');
     const identityStore = new PostgresPassportIdentityStore(pool);
     await identityStore.verifyReady();
@@ -73,6 +87,9 @@ async function start() {
     communityPersistence,
     rateLimitStore,
     communityAuthenticate,
+    organizationProfileApiEnabled,
+    organizationProfileAuthenticate: organizationProfileApiEnabled ? passportAuthenticate : null,
+    authorizeOrganizationProfile: organizationProfileApiEnabled ? authorizeOrganizationProfile : null,
     gameplayApiEnabled,
     gameplayCollectionService,
     gameplayTrainingService,

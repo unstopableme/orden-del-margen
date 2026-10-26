@@ -32,6 +32,13 @@ function configuredEconomyApiEnabled(environment = process.env) {
   throw new Error('ECONOMY_API_ENABLED must be true or false');
 }
 
+function configuredOrganizationProfileApiEnabled(environment = process.env) {
+  const value = environment.ORGANIZATION_PROFILE_API_ENABLED;
+  if (value === undefined || value === 'false') return false;
+  if (value === 'true') return true;
+  throw new Error('ORGANIZATION_PROFILE_API_ENABLED must be true or false');
+}
+
 function createApp({
   pool = defaultPool,
   communityPersistence = null,
@@ -40,6 +47,9 @@ function createApp({
   rateLimitStore,
   rateLimits,
   communityAuthenticate,
+  organizationProfileApiEnabled = configuredOrganizationProfileApiEnabled(),
+  organizationProfileAuthenticate = null,
+  authorizeOrganizationProfile = null,
   gameplayApiEnabled = configuredGameplayApiEnabled(),
   gameplayCollectionService = null,
   gameplayTrainingService = null,
@@ -65,6 +75,17 @@ if (economyApiEnabled && !pool) {
 }
 if (economyApiEnabled && (!economyService || !economyAuthenticate)) {
   throw new Error('ECONOMY_API_ENABLED requires the economy service and authenticated middleware');
+}
+if (typeof organizationProfileApiEnabled !== 'boolean') {
+  throw new TypeError('organizationProfileApiEnabled must be a boolean');
+}
+if (organizationProfileApiEnabled && !pool) {
+  throw new Error('ORGANIZATION_PROFILE_API_ENABLED requires PostgreSQL');
+}
+if (organizationProfileApiEnabled &&
+    (typeof organizationProfileAuthenticate !== 'function' ||
+     typeof authorizeOrganizationProfile !== 'function')) {
+  throw new Error('ORGANIZATION_PROFILE_API_ENABLED requires authenticated middleware and organization authorization');
 }
 
 const app = express();
@@ -105,6 +126,14 @@ if (pool) {
   app.use('/api/properties', propertiesRouter);
   app.use('/api/opportunities', opportunitiesRouter);
   app.use('/api/acquisitions', acquisitionsRouter);
+}
+
+if (organizationProfileApiEnabled) {
+  const { createOrganizationProfileRouter } = require('./routes/organizations');
+  app.use('/api/organizations', createOrganizationProfileRouter({
+    authenticate: organizationProfileAuthenticate,
+    authorizeOrganizationProfile
+  }));
 }
 
 if (gameplayApiEnabled) {
@@ -154,9 +183,10 @@ app.use((error, req, res, next) => {
 return app;
 }
 
-module.exports = createApp({ gameplayApiEnabled: false });
+module.exports = createApp({ gameplayApiEnabled: false, organizationProfileApiEnabled: false });
 module.exports.createApp = createApp;
 module.exports.configuredOrigins = configuredOrigins;
 module.exports.configuredTrustProxy = configuredTrustProxy;
 module.exports.configuredGameplayApiEnabled = configuredGameplayApiEnabled;
 module.exports.configuredEconomyApiEnabled = configuredEconomyApiEnabled;
+module.exports.configuredOrganizationProfileApiEnabled = configuredOrganizationProfileApiEnabled;
