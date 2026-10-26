@@ -115,6 +115,36 @@ test('applies the Level 2 twelve-hour storage cap', () => {
   assert.equal(result.discardedMilliseconds, 60 * 60 * 1000);
 });
 
+test('uses a supplied ruleset rate and storage cap instead of prototype constants', () => {
+  const result = calculateIdleProduction({
+    buildingType: 'wheat_farm',
+    level: 1,
+    lastSettledAt: at(0),
+    settledAt: at(10 * 60 * 60 * 1000),
+    productionRule: { asset: 'wheat', unitsPerHour: 120, storageLimitMs: 2 * 60 * 60 * 1000 }
+  });
+  assert.equal(result.hourlyRate, 120);
+  assert.equal(result.producedUnits, '240');
+  assert.equal(result.activeMilliseconds, 2 * 60 * 60 * 1000);
+  assert.equal(result.discardedMilliseconds, 8 * 60 * 60 * 1000);
+});
+
+test('validates a supplied ruleset production rule', () => {
+  const valid = {
+    buildingType: 'wheat_farm',
+    level: 1,
+    lastSettledAt: at(0),
+    settledAt: at(1_000),
+    productionRule: { asset: 'wheat', unitsPerHour: 60, storageLimitMs: 28_800_000 }
+  };
+  assert.throws(() => calculateIdleProduction({
+    ...valid, productionRule: { ...valid.productionRule, unitsPerHour: 0 }
+  }), /productionRule/);
+  assert.throws(() => calculateIdleProduction({
+    ...valid, productionRule: { ...valid.productionRule, storageLimitMs: -1 }
+  }), /productionRule/);
+});
+
 test('includes previously carried production while capping only new elapsed time', () => {
   const result = calculateIdleProduction({
     buildingType: 'wheat_farm', level: 1,

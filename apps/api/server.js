@@ -1,13 +1,103 @@
-const app = require('./src/app');
+const {
+  createApp,
+  configuredEconomyApiEnabled,
+  configuredGameplayApiEnabled,
+  configuredOrganizationProfileApiEnabled
+} = require('./src/app');
 const pool = require('./src/db');
+const communityData = require('./src/data/communityData');
+const { PostgresCommunityPersistence } = require('./src/data/postgresCommunityPersistence');
+const { MemoryRateLimitStore, PostgresRateLimitStore } = require('./src/rateLimit');
+const { createCommunityAuthenticator } = require('./src/auth/communityAuth');
+const {
+  createImmutablePassportAuthenticator,
+  passportConfiguration
+} = require('./src/auth/immutablePassportAuth');
+const { PostgresPassportIdentityStore } = require('./src/auth/passportIdentityStore');
+const {
+  authorizeOrganizationProfile,
+  verifyOrganizationMembershipSchema
+} = require('./src/auth/organizationAuthorization');
+const { PostgresIdleCollectionService } = require('./src/gameplay/postgresIdleCollection');
+const { PostgresTrainingGroundsService } = require('./src/gameplay/postgresTrainingGrounds');
+const { MarketplaceService } = require('./src/economy/marketplaceService');
+const { PostgresMarketplace } = require('./src/economy/queries/postgresMarketplace');
 
 const PORT = process.env.PORT || 3000;
 
 async function start() {
-  if (pool) {
-    const runMigrations = require('./src/migrate');
-    await runMigrations();
+  const gameplayApiEnabled = configuredGameplayApiEnabled(process.env);
+  const economyApiEnabled = configuredEconomyApiEnabled(process.env);
+  const organizationProfileApiEnabled = configuredOrganizationProfileApiEnabled(process.env);
+  if ((gameplayApiEnabled || economyApiEnabled || organizationProfileApiEnabled) && !pool) {
+    throw new Error('Enabled gameplay, economy, and organization profile APIs require PostgreSQL');
   }
+  let communityPersistence = null;
+  let rateLimitStore = new MemoryRateLimitStore();
+  let communityAuthenticate;
+  if (pool) {
+    communityPersistence = new PostgresCommunityPersistence(pool);
+    await communityPersistence.reload(communityData);
+    rateLimitStore = new PostgresRateLimitStore(pool);
+    await rateLimitStore.verifyReady();
+  }
+
+  if (organizationProfileApiEnabled) {
+    await verifyOrganizationMembershipSchema(pool);
+  }
+
+  const authMode = process.env.COMMUNITY_AUTH_MODE || 'configured';
+  let passportAuthenticate;
+  if (authMode === 'immutable-passport' || gameplayApiEnabled || economyApiEnabled || organizationProfileApiEnabled) {
+    if (!pool) throw new Error('Immutable Passport authentication requires PostgreSQL');
+    const identityStore = new PostgresPassportIdentityStore(pool);
+    await identityStore.verifyReady();
+    passportAuthenticate = createImmutablePassportAuthenticator({
+      identityStore,
+      configuration: passportConfiguration(process.env)
+    });
+  }
+
+  if (authMode === 'immutable-passport') {
+    communityAuthenticate = passportAuthenticate;
+  } else if (authMode === 'configured') {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Configured static community tokens are forbidden in production');
+    }
+    communityAuthenticate = createCommunityAuthenticator();
+  } else {
+    throw new Error('COMMUNITY_AUTH_MODE must be configured or immutable-passport');
+  }
+
+  const gameplayCollectionService = gameplayApiEnabled
+    ? new PostgresIdleCollectionService(pool)
+    : null;
+  const gameplayTrainingService = gameplayApiEnabled
+    ? new PostgresTrainingGroundsService(pool)
+    : null;
+  if (gameplayCollectionService) await gameplayCollectionService.verifyReady();
+  if (gameplayTrainingService) await gameplayTrainingService.verifyReady();
+  const economyService = economyApiEnabled
+    ? new MarketplaceService(new PostgresMarketplace(pool))
+    : null;
+  if (economyService) await economyService.verifyReady();
+
+  const app = createApp({
+    pool,
+    communityPersistence,
+    rateLimitStore,
+    communityAuthenticate,
+    organizationProfileApiEnabled,
+    organizationProfileAuthenticate: organizationProfileApiEnabled ? passportAuthenticate : null,
+    authorizeOrganizationProfile: organizationProfileApiEnabled ? authorizeOrganizationProfile : null,
+    gameplayApiEnabled,
+    gameplayCollectionService,
+    gameplayTrainingService,
+    gameplayAuthenticate: gameplayApiEnabled ? passportAuthenticate : null,
+    economyApiEnabled,
+    economyService,
+    economyAuthenticate: economyApiEnabled ? passportAuthenticate : null
+  });
 
   const server = app.listen(PORT, () => {
     console.log(`Orden del Margen API running on http://localhost:${PORT}`);

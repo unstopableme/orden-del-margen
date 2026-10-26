@@ -2,6 +2,8 @@
 
 This document is a test-fixture plan only. It contains no executable SQL.
 
+> **Tracking state: SKIPPED.** This non-executable plan is frozen. Do not extend it into a harness, design additional database-locking cases, or run it until a dedicated disposable PostgreSQL integration-test environment is explicitly authorized. See `TEST_MANIFEST.md`.
+
 ## Preconditions
 
 - Provision a new, isolated PostgreSQL database owned by the test harness.

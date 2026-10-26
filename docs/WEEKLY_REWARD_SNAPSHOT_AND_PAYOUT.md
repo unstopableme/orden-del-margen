@@ -29,6 +29,13 @@ Unassociated accounts do not appear as payout participants and receive no
 fallback or retroactive allocation. Association or primary-account changes after
 the exclusive period end affect only later periods.
 
+Tower eligibility is governed by the adopted
+[Tower Level 3 eligibility checker](TOWER_LEVEL_3_ELIGIBILITY_CHECKER.md). It
+requires a confirmed association, exactly one designated primary account, and
+Tower Level 3 or higher on that account, all effective at the exclusive period
+end. Ordinary disqualifications are recorded as exclusions; inconsistent
+source state invalidates snapshot generation.
+
 ### Formula-to-integer weight boundary
 
 The payout calculator consumes only canonical nonnegative integer weight
@@ -66,3 +73,10 @@ pool exactly.
 Database snapshot creation, payout persistence, idempotency, locking, retries,
 and any API are separate future work. No payout endpoint or production job is
 authorized by this contract or by the pure calculator.
+
+The adopted, implementation-deferred persistence rules are specified in
+[Payout idempotency and uniqueness](IDEMPOTENCY_AND_UNIQUENESS.md). They use
+one allocation per `(snapshot_id, participant_id)`, retain the snapshotted
+primary account as allocation evidence, and reject an idempotency-key replay
+whose canonical payload fingerprint differs. They do not authorize a payout
+service, migration, retroactive allocation, or operational-exception payout.
